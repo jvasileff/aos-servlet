@@ -21,8 +21,8 @@ webapp.reloadable: true
 ################################################################################
 
 ## ALL JARS FROM REPOSITORY:
-dir.jars:/opt/gx/repository/jars
-dir.jars.notfree:/opt/gx/repository/jars.notfree
+dir.jars:/opt/zeus/repository/jars
+dir.jars.notfree:/opt/zeus/repository/jars.notfree
 
 ## JARS SPECIFIED INDIVIDUALLY:
 anodyneos-commons.jar=../anodyneos-commons/build/jar/anodyneos-commons.jar
