@@ -426,12 +426,14 @@ public class Params {
 
         protected String process(String str) {
             if (args.contains("url")) {
-                try {
-                    str = java.net.URLEncoder.encode(str, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
+                // TODO: when JDK1.3 support is dropped, toggle comments for the lines below
+                //try {
+                    //str = java.net.URLEncoder.encode(str, "UTF-8");
+                    str = java.net.URLEncoder.encode(str);
+                //} catch (UnsupportedEncodingException e) {
                     // this should not happen
-                    throw new Error(e.getMessage());
-                }
+                    //throw new Error(e.getMessage());
+                //}
             } else if (args.contains("html")) {
                 str = htmlEncode(str);
             }
