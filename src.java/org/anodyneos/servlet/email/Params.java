@@ -15,6 +15,7 @@ package org.anodyneos.servlet.email;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ public class Params {
     private HttpServlet servlet;
     private HttpServletRequest req;
     private javax.xml.parsers.DocumentBuilder docBuilder;
+    private Map reqAsMap;
 
     /**
      *  <code>types</code> holds custom parameter types and values.  The key is
@@ -53,6 +55,27 @@ public class Params {
     public static final String SERVLET_PARAM = "servletParam";
     public static final String CONTEXT_ATTR = "ctxAttr";
     public static final String CONTEXT_PARAM = "ctxParam";
+    public static final String CGI = "CGI";
+
+    public static final Set CGI_VARIABLES = new HashSet();
+
+    static {
+        CGI_VARIABLES.add("AUTH_TYPE");
+        CGI_VARIABLES.add("REQUEST_METHOD");
+        CGI_VARIABLES.add("PATH_INFO");
+        CGI_VARIABLES.add("PATH_TRANSLATED");
+        CGI_VARIABLES.add("QUERY_STRING");
+        CGI_VARIABLES.add("REMOTE_USER");
+        CGI_VARIABLES.add("SCRIPT_NAME");
+        CGI_VARIABLES.add("CONTENT_LENGTH");
+        CGI_VARIABLES.add("CONTENT_TYPE");
+        CGI_VARIABLES.add("SERVER_PROTOCOL");
+        CGI_VARIABLES.add("SERVER_NAME");
+        CGI_VARIABLES.add("SERVER_PORT");
+        CGI_VARIABLES.add("REMOTE_ADDR");
+        CGI_VARIABLES.add("REMOTE_HOST");
+    }
+
 
     public static final char SEP_CHAR = ':';
     private static final String SEP_DOUBLE = "::";
@@ -69,6 +92,10 @@ public class Params {
         initType(SERVLET_PARAM);
         initType(CONTEXT_ATTR);
         initType(CONTEXT_PARAM);
+
+        // CGI
+        initType(CGI);
+        reqAsMap = new HttpRequestAsMap(req);
 
         // store cookies into types
         initType(COOKIE);
@@ -113,6 +140,8 @@ public class Params {
             return toStringValue(servlet.getServletContext().getAttribute(name));
         } else if (CONTEXT_PARAM.equals(type)) {
             return toStringValue(servlet.getServletContext().getInitParameter(name));
+        } else if (CGI.equals(type)) {
+            return toStringValue(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
             ArrayList al = (ArrayList) ((Map)types.get(type)).get(name);
             if (null != al) {
@@ -139,6 +168,8 @@ public class Params {
             return toStringArray(servlet.getServletContext().getAttribute(name));
         } else if (CONTEXT_PARAM.equals(type)) {
             return toStringArray(servlet.getServletContext().getInitParameter(name));
+        } else if (CGI.equals(type)) {
+            return toStringArray(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
             ArrayList al = (ArrayList) ((Map)types.get(type)).get(name);
             if (null != al) {
@@ -165,6 +196,8 @@ public class Params {
             return toStringArray(servlet.getServletContext().getAttributeNames());
         } else if (CONTEXT_PARAM.equals(type)) {
             return toStringArray(servlet.getServletContext().getInitParameterNames());
+        } else if (CGI.equals(type)) {
+            return toStringArray(reqAsMap.keySet());
         } else if (types.containsKey(type)) {
             Set keySet = ((Map)types.get(type)).keySet();
             return (String[]) keySet.toArray(new String[keySet.size()]);
@@ -198,6 +231,14 @@ public class Params {
             return new String[] {};
         } else {
             return new String[] {s};
+        }
+    }
+
+    protected String[] toStringArray(Set s) {
+        if (null == s) {
+            return new String[] {};
+        } else {
+            return (String[]) s.toArray(new String[s.size()]);
         }
     }
 
@@ -288,12 +329,18 @@ public class Params {
         String[] names = getParameterNames(type);
         for (int i = 0; i < names.length; i++) {
             String[] values = getParameterValues(type, names[i]);
-            for (int j = 0; j < values.length; j++) {
+            if (values.length == 0) {
                 Element el = doc.createElement("param");
                 el.setAttribute("name", names[i]);
-                //Element el = doc.createElement(names[i]);
-                el.appendChild(doc.createTextNode(values[j]));
                 parent.appendChild(el);
+            } else {
+                for (int j = 0; j < values.length; j++) {
+                    Element el = doc.createElement("param");
+                    el.setAttribute("name", names[i]);
+                    //Element el = doc.createElement(names[i]);
+                    el.appendChild(doc.createTextNode(values[j]));
+                    parent.appendChild(el);
+                }
             }
         }
     }
@@ -433,4 +480,118 @@ public class Params {
         }
         return sb.toString();
     }
+
+    public class HttpRequestAsMap implements Map {
+        HttpServletRequest req;
+        public HttpRequestAsMap(HttpServletRequest req) {
+            this.req = req;
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#size()
+         */
+        public int size() {
+            return CGI_VARIABLES.size();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#clear()
+         */
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#isEmpty()
+         */
+        public boolean isEmpty() {
+            return false;
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#containsKey(java.lang.Object)
+         */
+        public boolean containsKey(Object key) {
+            return CGI_VARIABLES.contains(key);
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#containsValue(java.lang.Object)
+         */
+        public boolean containsValue(Object value) {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#values()
+         */
+        public Collection values() {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#putAll(java.util.Map)
+         */
+        public void putAll(Map t) {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#entrySet()
+         */
+        public Set entrySet() {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#keySet()
+         */
+        public Set keySet() {
+            return CGI_VARIABLES;
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#get(java.lang.Object)
+         */
+        public Object get(Object key) {
+            if (! (key instanceof String)) {
+                return null;
+            }
+            String k = (String) key;
+
+            if (k.equals("AUTH_TYPE")) {
+                return req.getAuthType();
+            } else if (k.equals("REQUEST_METHOD")) {
+                return req.getMethod();
+            } else if (k.equals("PATH_INFO")) {
+                return req.getPathInfo();
+            } else if (k.equals("PATH_TRANSLATED")) {
+                return req.getPathTranslated();
+            } else if (k.equals("QUERY_STRING")) {
+                return req.getQueryString();
+            } else if (k.equals("REMOTE_USER")) {
+                return req.getRemoteUser();
+            } else if (k.equals("SCRIPT_NAME")) {
+                return req.getServletPath();
+            } else if (k.equals("CONTENT_LENGTH")) {
+                return new Integer(req.getContentLength());
+            } else if (k.equals("CONTENT_TYPE")) {
+                return req.getContentType();
+            } else if (k.equals("SERVER_PROTOCOL")) {
+                return req.getProtocol();
+            } else if (k.equals("SERVER_NAME")) {
+                return req.getServerName();
+            } else if (k.equals("SERVER_PORT")) {
+                return new Integer(req.getServerPort());
+            } else if (k.equals("REMOTE_ADDR")) {
+                return req.getRemoteAddr();
+            } else if (k.equals("REMOTE_HOST")) {
+                return req.getRemoteHost();
+            }
+            return null;
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#remove(java.lang.Object)
+         */
+        public Object remove(Object key) {
+            throw new UnsupportedOperationException();
+        }
+        /* (non-Javadoc)
+         * @see java.util.Map#put(java.lang.Object, java.lang.Object)
+         */
+        public Object put(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
 }
