@@ -74,6 +74,10 @@ public class BrowserDetector {
         parse();
     }
 
+    public void setRequest(HttpServletRequest req) {
+        setUserAgentString(req.getHeader("User-Agent"));
+    }
+
     private void parse() {
         Pattern p;
         Matcher m;
