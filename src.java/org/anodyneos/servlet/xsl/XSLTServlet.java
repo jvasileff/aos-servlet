@@ -1,5 +1,6 @@
 package org.anodyneos.servlet.xsl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -7,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URL;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -62,6 +64,8 @@ public class XSLTServlet extends HttpServlet {
     private static final String CACHE_SIZE = "cacheSize";
     private static final String DISABLE_CACHE = "disableCache";
     private static final String ENABLE_CACHE = "enableCache";
+    private static final String DISABLE_CLIENT_CACHE = "disableClientCache";
+    private static final String ENABLE_CLIENT_CACHE = "enableClientCache";
     private static final String DISABLE_OUTPUT_VALIDATION = "disableOutputValidation";
     private static final String ENABLE_OUTPUT_VALIDATION = "enableOutputValidation";
     private static final String HELP = "help";
@@ -70,6 +74,7 @@ public class XSLTServlet extends HttpServlet {
     private static final String IP_RESOLVER_EXTERNAL = "resolver.externalLookups";
     private static final String IP_RESOLVER_USE_CATALOG = "resolver.useCatalog";
     private static final String IP_TEMPLATE_CACHE = "template.cache";
+    private static final String IP_CLIENT_CACHE = "client.cache";
     private static final String IP_INPUT_VALIDATION = "input.validation";
     private static final String IP_OUTPUT_VALIDATION = "output.validation";
     private static final String IP_XHTML_MAGIC = "xhtml.magic";
@@ -85,6 +90,7 @@ public class XSLTServlet extends HttpServlet {
     private boolean outputValidation = false;
     private boolean xhtmlMagic = true;
     private boolean logWarnings = true;
+    private boolean clientCache = true;
 
     /**
      * The attribute name in the &lt;?xml-stylesheet&gt; tag used in stylesheet
@@ -143,6 +149,13 @@ public class XSLTServlet extends HttpServlet {
             templatesCache.setCacheEnabled(false);
         } else {
             templatesCache.setCacheEnabled(true);
+        }
+
+        // Setup clientCache
+        if (IP_FALSE.equals(servletConfig.getInitParameter(IP_CLIENT_CACHE))) {
+            clientCache = false;
+        } else {
+            clientCache = true;
         }
 
         // Setup documentBuilderFactory (for xml input)
@@ -209,6 +222,20 @@ public class XSLTServlet extends HttpServlet {
             out.println("<HTML><PRE>");
             out.println("Cache enabled.");
             out.println("</PRE></HTML>");
+        } else if (DISABLE_CLIENT_CACHE.equals(req.getParameter(PARAM_OP))) {
+            clientCache = false;
+            out = res.getWriter();
+            res.setContentType("text/html");
+            out.println("<HTML><PRE>");
+            out.println("Client Cache disabled.");
+            out.println("</PRE></HTML>");
+        } else if (ENABLE_CLIENT_CACHE.equals(req.getParameter(PARAM_OP))) {
+            clientCache = true;
+            out = res.getWriter();
+            res.setContentType("text/html");
+            out.println("<HTML><PRE>");
+            out.println("Client Cache enabled.");
+            out.println("</PRE></HTML>");
         } else if (DISABLE_OUTPUT_VALIDATION.equals(req.getParameter(PARAM_OP))) {
             outputValidation = false;
             out = res.getWriter();
@@ -236,6 +263,11 @@ public class XSLTServlet extends HttpServlet {
             } else {
                 out.println("Cache currently disabled.");
             }
+            if (clientCache) {
+                out.println("Client Cache currently enabled.");
+            } else {
+                out.println("Client Cache currently disabled.");
+            }
             if (outputValidation) {
                 out.println("Output Validation currently enabled.");
             } else {
@@ -245,12 +277,38 @@ public class XSLTServlet extends HttpServlet {
             out.println("op=" + CLEAR_CACHE + " to clear the cache");
             out.println("op=" + DISABLE_CACHE + " to disable the cache");
             out.println("op=" + ENABLE_CACHE + " to enable the cache");
+            out.println("op=" + DISABLE_CLIENT_CACHE + " to disable the client cache");
+            out.println("op=" + ENABLE_CLIENT_CACHE + " to enable the client cache");
             out.println("op=" + DISABLE_OUTPUT_VALIDATION + " to enable the cache");
             out.println("op=" + ENABLE_OUTPUT_VALIDATION + " to enable the cache");
             out.println("op=" + HELP + " for this help screen");
             out.println("</PRE></HTML>");
         } else {
             try {
+                // clientCache
+                if(clientCache) {
+                    // either (1)
+                    URL url = getServletContext().getResource(req.getServletPath());
+                    if(url.getProtocol().equals("file")) {
+                        File resourceFile = new File(url.getFile());
+                        long lastModified = resourceFile.lastModified();
+                        if(req.getDateHeader("If-Modified-Since") < lastModified) {
+                            res.setDateHeader("Last-Modified", lastModified);
+                        } else {
+                            res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                            return;
+                        }
+                    } else {
+                        // using compressed war, assume client has most recent file
+                        if(req.getDateHeader("If-Modified-Since") > 0) {
+                            res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                            return;
+                        } else {
+                            res.setDateHeader("Last-Modified", System.currentTimeMillis());
+                        }
+                    }
+                }
+
                 // get xml source
                 InputStream inputStream = getServletContext().getResourceAsStream(
                         req.getServletPath());
