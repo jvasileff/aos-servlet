@@ -1,61 +1,16 @@
 package org.anodyneos.servlet.email;
 
-/*
-    IDEAS:
-
-        -   Factory to produce handlers for action elements by element name.
-            So, factory will return a handler suitable for processing "email"
-            elements.  This would allow pluggable handlers for expansion.
-
-        -   Create convension for parameter passing to handlers (parameters are
-            http, cookie, deployment configs, etc).  Use namespace, key, and
-            value.  Multiple values for each key and ordering must be
-            preserved.  This would abstract away the servlet tier.  Is this too
-            much?
-
-        -   Available Data
-                per request:
-                    http parameters     ServletRequest.getParameter()       request-param:KEY
-                    http headers        HttpServletRequest.getHeader()      request-header:KEY
-                    request attributes  ServletRequest.getAttribute()       request-attr:KEY
-                    cookies             ServletRequest                      cookie:KEY
-                per servlet:
-                    servlet parameters  ServletConfig.getInitParameter()    servlet-param:KEY
-                per webapp:
-                    context attributes  ServletContext.getAttribute()       context-attr:KEY
-                    context parameters  ServletContext.getInitParameter()   context-param:KEY
-
-        -   Available Data
- */
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 
-import javax.activation.DataHandler;
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.internet.MimePart;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.anodyneos.commons.net.ClassLoaderURIHandler;
 import org.anodyneos.commons.net.URI;
@@ -67,15 +22,21 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class EmailServlet extends javax.servlet.http.HttpServlet {
 
-    private static final String CLEAR_CACHE = "clearCache";
-    private static final String CACHE_SIZE = "cacheSize";
-    private static final String DISABLE_CACHE = "disableCache";
-    private static final String ENABLE_CACHE = "enableCache";
-    private static final String HELP = "help";
-    private static final String PARAM_OP = "op";
+    private static final String PARAM_OP = "aos.op";
+    private static final String PARAM_CONFIG_FILE = "aos.configFile";
+    private static final String PARAM_CONFIG_XSL = "aos.configXsl";
+
+    private static final String OP_ECHO_CONFIG = "echoConfig";
+    private static final String OP_ECHO_PARAMS = "echoParams";
+    private static final String OP_HELP = "help";
+    private static final String OP_XSL_CLEAR_CACHE = "clearCache";
+    private static final String OP_XSL_CACHE_SIZE = "cacheSize";
+    private static final String OP_XSL_DISABLE_CACHE = "disableCache";
+    private static final String OP_XSL_ENABLE_CACHE = "enableCache";
 
     private static final String IP_TEMPLATE_RESOLVER = "template.resolver";
     private static final String IP_TEMPLATE_EXTERNAL = "template.externalLookups";
@@ -84,17 +45,17 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
     private static final String IP_TRANSFORMER_EXTERNAL = "transformer.externalLookups";
     private static final String IP_PARSER_VALIDATION = "parser.validation";
 
-    private static final String IP_CLASS_LOADER = "ClassLoader";
-    private static final String IP_SERVLET_CONTEXT = "ServletContext";
-    private static final String IP_TRUE = "true";
-    private static final String IP_FALSE = "false";
+    private static final String IP_CONFIG_FILE_BASE_URI = "aos.configFileBaseURI";
+    private static final String IP_CLASS_LOADER = "aos.classLoader";
+    private static final String IP_SERVLET_CONTEXT = "aos.servletContext";
+    private static final String IP_COMMAND_FACTORY = "aos.commandFactoryClass";
 
-    private static final String HOST_SMTP = "HostSMTP";
+    private static final String TRUE = "true";
+    private static final String FALSE = "false";
 
-    private TemplatesCache templatesCache;
+    private CommandFactory commandFactory;
     private UnifiedResolver resolver;
-    private javax.xml.parsers.DocumentBuilder docBuilder;
-    private String smtpHost;
+    private TemplatesCache templatesCache;
 
     /**
      * The attribute name in the &lt;?xml-stylesheet&gt; tag used in
@@ -110,8 +71,15 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         ClassLoader classLoader = this.getClass().getClassLoader();
         resolver = new UnifiedResolver();
 
-        // Setup smtp
-        smtpHost = servletConfig.getInitParameter(HOST_SMTP);
+        // Setup commandFactory
+        String clazz = servletConfig.getInitParameter(IP_COMMAND_FACTORY);
+        if (clazz == null) {
+            clazz = "org.anodyneos.servlet.email.CommandFactoryImpl";
+        }
+        commandFactory = (CommandFactory) Util.instantiateObject(EmailServlet.class, clazz);
+        if (commandFactory == null) {
+            throw new ServletException("Cannot instantiate command factory.");
+        }
 
         // Setup resolver
         resolver.setDefaultLookupEnabled(false);
@@ -122,22 +90,12 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
 
         // Setup templatesCache
         templatesCache = new TemplatesCache(resolver);
-        if (IP_FALSE.equals(servletConfig.getInitParameter(IP_TEMPLATE_CACHE))) {
+        if (FALSE.equals(servletConfig.getInitParameter(IP_TEMPLATE_CACHE))) {
             templatesCache.setCacheEnabled(false);
         } else {
             templatesCache.setCacheEnabled(true);
         }
 
-        // Setup documentBuilder (for xml input)
-        try {
-            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-            docBuilderFactory.setValidating(false);
-            docBuilder = docBuilderFactory.newDocumentBuilder();
-            docBuilder.setErrorHandler(new GenericErrorHandler());
-            docBuilder.setEntityResolver(resolver);
-        } catch (javax.xml.parsers.ParserConfigurationException e) {
-            throw new ServletException(e);
-        }
     }
 
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws
@@ -148,19 +106,33 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws
             ServletException, IOException {
 
-        Params params = new Params(this, req);
+        Params params;
+        URI configURI;
+        Document configDoc;
+        EmailContext ctx;
+
+        // Read configuration and setup context object
+        try {
+            params = new Params(this, req);
+            configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
+            configDoc = getDocumentBuilder().parse(
+                    resolver.resolveEntity("", configURI.toString()));
+            ctx = new EmailContext(templatesCache, resolver, params,
+                    configURI, configDoc);
+        } catch (SAXException e) {
+            throw new ServletException("Cannot parse config xml.", e);
+        } catch (ParserConfigurationException e) {
+            throw new ServletException("Cannot create DocumentBuilder.", e);
+        }
 
         try {
-
-            /* read/parse XML config file */
-
-            URI configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
-            Document doc = docBuilder.parse(resolver.resolveEntity("", configURI.toString()));
-            String redir = processDoc(configURI, doc, params);
+            String redir = processDoc(ctx);
             if (redir != null) {
                 res.sendRedirect(redir);
             } else {
-                params.addScopeElements(doc.getDocumentElement());
+                /* This stuff should be put into a debugging operation */
+                /*
+                params.addScopeElements(configDoc.getDocumentElement());
 
                 String rawXMLMimeType = "text/xml";
                 if ( "xml".equals(req.getParameter("rawXMLMime"))) {
@@ -172,11 +144,17 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                 PrintWriter out = res.getWriter();
                 Transformer transformer = templatesCache.getTransformer();
                 transformer.setURIResolver(resolver);
-                transformer.transform(new DOMSource(doc, "webapp://" + req.getServletPath()),
+                transformer.transform(new DOMSource(configDoc, "webapp://" + req.getServletPath()),
                                 new StreamResult(out));
                 out.close();
-            }
+                */
 
+                res.setContentType("text/html");
+                PrintWriter out = res.getWriter();
+                out.println("<html><body>");
+                out.println("<center><h1>The email has been sent.</h1></center>");
+                out.println("</body></html>");
+            }
         } catch (Exception e) {
             if (!res.isCommitted()) {
                 res.reset();
@@ -195,18 +173,24 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
 
     }
 
-    public String processDoc(URI configURI, Document doc, Params params) throws Exception {
-        Element config = doc.getDocumentElement();
+    public String processDoc(EmailContext ctx) throws Exception {
+        Element config = ctx.getConfigDoc().getDocumentElement();
         NodeList nl = config.getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
             Node n = nl.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE && n.getNodeName().equals("email")) {
-                processEmail(configURI, (Element) n, params);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                Element el = (Element) n;
+                Command cmd = commandFactory.getHandlerFor(el);
+                if (cmd != null) {
+                    cmd.process(ctx, el);
+                } else {
+                    throw new ServletException("Cannot find command handler for element.");
+                }
             }
         }
 
         // find redirect
-        Element successRedirect = getFirstElement(config, "successRedirect");
+        Element successRedirect = Util.getFirstElement(config, "successRedirect");
         if (successRedirect != null) {
             return successRedirect.getAttribute("url");
         } else {
@@ -214,241 +198,13 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         }
     }
 
-    public void processEmail(URI configURI, Element email, Params params) throws Exception {
-        List to = new ArrayList();
-        List cc = new ArrayList();
-        List bcc = new ArrayList();
-        List from = new ArrayList();
-
-        // mail variables
-        Properties props;
-
-        // create some properties and get the default Session
-        props = System.getProperties();
-        props.put("mail.smtp.host", smtpHost);
-        Session session = Session.getDefaultInstance(props, null);
-        session.setDebug(false);
-
-        // create a mime message
-        MimeMessage message = new MimeMessage(session);
-        message.setSentDate(new java.util.Date());
-
-        NodeList nl = email.getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            Node n = nl.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE) {
-                Element el = (Element) n;
-                if ("to".equals(el.getNodeName())) {
-                    to.add(getAddress(el, params));
-                } else if ("cc".equals(el.getNodeName())) {
-                    cc.add(getAddress(el, params));
-                } else if ("bcc".equals(el.getNodeName())) {
-                    bcc.add(getAddress(el, params));
-                } else if ("from".equals(el.getNodeName())) {
-                    from.add(getAddress(el, params));
-                } else if ("subject".equals(el.getNodeName())) {
-                    message.setSubject(params.parse(getText(el)));
-                } else if ("part".equals(el.getNodeName())) {
-                    processPart(configURI, message, el, params);
-                } else if ("multipart".equals(el.getNodeName())) {
-                    processMultipart(configURI, message, el, params);
-                }
-            }
-
-        }
-        if (to.size() > 0) {
-            message.setRecipients(Message.RecipientType.TO, (InternetAddress[])to.toArray(new InternetAddress[to.size()]));
-        }
-        if (cc.size() > 0) {
-            message.setRecipients(Message.RecipientType.CC, (InternetAddress[])cc.toArray(new InternetAddress[cc.size()]));
-        }
-        if (bcc.size() > 0) {
-            message.setRecipients(Message.RecipientType.BCC, (InternetAddress[])bcc.toArray(new InternetAddress[bcc.size()]));
-        }
-        if (from.size() > 0) {
-            message.addFrom((InternetAddress[])from.toArray(new InternetAddress[from.size()]));
-        }
-        message.saveChanges();
-        //System.out.println("EMAIL MESSAGE___________________________________");
-        //message.writeTo(System.out);
-        Transport.send(message);
+    private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        docBuilderFactory.setValidating(false);
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        docBuilder.setErrorHandler(new GenericErrorHandler());
+        docBuilder.setEntityResolver(resolver);
+        return docBuilder;
     }
 
-    public static String getText(final Node n) {
-        StringBuffer sb = new StringBuffer();
-        NodeList nl = n.getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            Node n2 = nl.item(i);
-            if (n2.getNodeType() == Node.TEXT_NODE || n2.getNodeType() == Node.CDATA_SECTION_NODE) {
-                sb.append(n2.getNodeValue());
-            } else if (n2.getNodeType() == Node.ELEMENT_NODE) {
-                sb.append(getText(n2));
-            }
-        }
-        return sb.toString();
-    }
-
-    public Address getAddress(Element el, Params params) throws ServletException,
-            java.io.UnsupportedEncodingException{
-
-        String address = params.parse(el.getAttribute("address"));
-        if (! Util.isValidEmailFormat(address)) {
-            address = "";
-        }
-        String name = params.parse(el.getAttribute("name"));
-        return new InternetAddress(address, name);
-    }
-
-    public Element findChildElement(Element el, String name) {
-        NodeList nl = el.getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            Node n = nl.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE && n.getNodeName().equals(name)) {
-                return (Element) n;
-            }
-        }
-        return null;
-    }
-
-    public void processPart(URI configURI, MimePart part, Element el, Params params)
-    throws MessagingException, ServletException, URI.MalformedURIException {
-        String mimeType = el.getAttribute("mimeType").trim();
-        String fileName = el.getAttribute("fileName").trim();
-
-        // will have one of (content, xslResultContent, fileContent)
-        Element content = findChildElement(el, "content");
-        Element fileContent = findChildElement(el, "fileContent");
-        Element substResultContent = findChildElement(el, "substResultContent");
-        Element xslResultContent = findChildElement(el, "xslResultContent");
-        if (content != null) {
-            String charset = content.getAttribute("charset").trim();
-            StringDataSource ds = new StringDataSource(params.parse(getText(content)));
-            if (charset.length() != 0) {
-                ds.setCharset(charset);
-            }
-            if (mimeType.length() != 0) {
-                ds.setMimeType(mimeType);
-            }
-            if(fileName.length() != 0) {
-                ds.setName(fileName);
-                part.setFileName(fileName);
-            }
-            part.setDataHandler(new DataHandler(ds));
-        } else if (substResultContent != null) {
-            String path = substResultContent.getAttribute("path").trim();
-            String charset = substResultContent.getAttribute("charset").trim();
-            if (charset.length() == 0) {
-                charset = null;
-            }
-            String text;
-            // if path is null, use text content of element
-            if (path.length() == 0) {
-                text = params.parse(getText(substResultContent));
-            } else {
-                URI uri = new URI(configURI, path);
-                try {
-                    InputStream is = resolver.openStream(uri);
-                    StringWriter sw = new StringWriter();
-                    byte[] buff = new byte[1024];
-                    for (int numRead = is.read(buff); numRead != -1; numRead = is.read(buff)) {
-                        if (charset != null) {
-                            sw.write(new String(buff, 0, numRead, charset));
-                        } else {
-                            sw.write(new String(buff, 0, numRead));
-                        }
-                    }
-                    sw.flush();
-                    text = params.parse(sw.toString());
-                } catch (java.io.IOException e) {
-                    throw new ServletException(e);
-                }
-            }
-            StringDataSource ds = new StringDataSource(text);
-            if (charset != null) {
-                ds.setCharset(charset);
-            }
-            if (mimeType.length() != 0) {
-                ds.setMimeType(mimeType);
-            }
-            if(fileName.length() != 0) {
-                ds.setName(fileName);
-                part.setFileName(fileName);
-            }
-            part.setDataHandler(new DataHandler(ds));
-        } else if (fileContent != null) {
-            // TODO: Make secure
-            String charset = fileContent.getAttribute("charset").trim();
-            String path = fileContent.getAttribute("path").trim();
-            URI uri = new URI(configURI, path);
-            URIDataSource ds = new URIDataSource(uri, resolver);
-            if (charset.length() != 0) {
-                ds.setCharset(charset);
-            }
-            if (mimeType.length() != 0) {
-                ds.setMimeType(mimeType);
-            }
-            if(fileName.length() != 0) {
-                ds.setName(fileName);
-                part.setFileName(fileName);
-            }
-            part.setDataHandler(new DataHandler(ds));
-        } else if (xslResultContent != null) {
-            String charset = xslResultContent.getAttribute("charset").trim();
-            String path = xslResultContent.getAttribute("path").trim();
-            URI uri = new URI(configURI, path);
-            XSLDataSource ds = new XSLDataSource(templatesCache, uri, params);
-            if (charset.length() != 0) {
-                ds.setCharset(charset);
-            }
-            if (mimeType.length() != 0) {
-                ds.setMimeType(mimeType);
-            }
-            if(fileName.length() != 0) {
-                ds.setName(fileName);
-                part.setFileName(fileName);
-            }
-            part.setDataHandler(new DataHandler(ds));
-        }
-    }
-
-    /**
-     *  @param part The <code>MimePart</code> that will hold the
-     *  <code>MimeMultipart</code> content.
-     */
-    public void processMultipart(URI configURI, MimePart part, Element multipartEl, Params params)
-    throws MessagingException, ServletException, URI.MalformedURIException {
-        MimeMultipart multipart = new MimeMultipart();
-        String subType = multipartEl.getAttribute("subType").trim();
-        if (subType.length() > 0) {
-            multipart.setSubType(subType);
-        }
-
-        NodeList nl = multipartEl.getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            Node n = nl.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE) {
-                Element el = (Element) n;
-                if ("part".equals(el.getNodeName())) {
-                    MimeBodyPart p = new MimeBodyPart();
-                    processPart(configURI, p, el, params);
-                    multipart.addBodyPart(p);
-                } else if ("multipart".equals(el.getNodeName())) {
-                    MimeBodyPart p = new MimeBodyPart();
-                    processMultipart(configURI, p, el, params);
-                    multipart.addBodyPart(p);
-                }
-            }
-        }
-        part.setContent(multipart);
-    }
-
-    public Element getFirstElement(Element el, String name) {
-        NodeList nl = el.getElementsByTagName(name);
-        if (nl.getLength() == 0) {
-            return null;
-        } else {
-            return (Element) nl.item(0);
-        }
-    }
 }
-
