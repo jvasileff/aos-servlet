@@ -33,6 +33,8 @@
     <property name="xalan.jar" location="${dir.jars}/xalan-2.6.2/xalan.jar"/>
     <property name="xercesImpl.jar" location="${dir.jars}/xerces-2.6.0/xercesImpl.jar"/>
 
+    <property name="junit.jar" location="${dir.jars}/junit-3.8.1/junit.jar"/>
+
     <!-- non-free -->
     <property name="activation.jar" location="${dir.jars.notfree}/jaf-1.0.2/activation.jar"/>
     <property name="imap.jar" location="${dir.jars.notfree}/javamail-1.3.1/imap.jar"/>
@@ -63,6 +65,8 @@
         <copy toDir="${dir.build.ide.lib}" file="${xml-apis.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${xalan.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
+
+        <copy toDir="${dir.build.ide.lib}" file="${junit.jar}"/>
 
         <!-- paths -->
         <path id="path.compile">
