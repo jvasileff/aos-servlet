@@ -35,6 +35,8 @@
 
     <property name="junit.jar" location="${dir.jars}/junit-3.8.1/junit.jar"/>
 
+    <property name="commons-logging.jar" location="${dir.jars}/commons-logging-1.0.3/commons-logging.jar"/>
+
     <!-- non-free -->
     <property name="activation.jar" location="${dir.jars.notfree}/jaf-1.0.2/activation.jar"/>
     <property name="imap.jar" location="${dir.jars.notfree}/javamail-1.3.1/imap.jar"/>
@@ -67,6 +69,8 @@
         <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
 
         <copy toDir="${dir.build.ide.lib}" file="${junit.jar}"/>
+
+        <copy toDir="${dir.build.ide.lib}" file="${commons-logging.jar}"/>
 
         <!-- paths -->
         <path id="path.compile">
