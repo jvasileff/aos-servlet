@@ -1,5 +1,5 @@
 # TOMCAT
-catalina.home:C:/path/to/jakarta-tomcat-5.0.19
+catalina.home:/opt/gx/jakarta-tomcat-5.0.19
 catalina.username: admin
 catalina.password: admin
 catalina.url.manager: http://localhost:8080/manager
@@ -21,8 +21,8 @@ webapp.reloadable: true
 ################################################################################
 
 ## ALL JARS FROM REPOSITORY:
-dir.jars:C:/opt/cygwin/opt/gx/repository/jars
-dir.jars.notfree:C:/opt/cygwin/opt/gx/repository/jars.notfree
+dir.jars:/opt/gx/repository/jars
+dir.jars.notfree:/opt/gx/repository/jars.notfree
 
 ## JARS SPECIFIED INDIVIDUALLY:
 anodyneos-commons.jar=../anodyneos-commons/build/jar/anodyneos-commons.jar
