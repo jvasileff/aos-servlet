@@ -176,7 +176,7 @@
         </copy>
     </target>
 
-    <target name="compile.common" depends="compileJava, refreshWebApp"/>
+    <target name="compile.common" depends="compileJava, refreshWebapp"/>
     <target name="compile.pre"/>
     <target name="compile.post"/>
 
@@ -203,9 +203,9 @@
     </target>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ~~  Refresh WebApp
+    ~~  Refresh Webapp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-    <target name="refreshWebApp.common" depends="prepare">
+    <target name="refreshWebapp.common" depends="prepare">
         <!-- build context.xml -->
         <style  in="${dir.src.misc}/dummy.xml"
                 out="${file.build.context}"
@@ -234,9 +234,9 @@
         </copy>
     </target>
 
-    <target name="refreshWebApp.pre"/>
-    <target name="refreshWebApp.post"/>
-    <target name="refreshWebApp" depends="refreshWebApp.pre, refreshWebApp.common, refreshWebApp.post"
+    <target name="refreshWebapp.pre"/>
+    <target name="refreshWebapp.post"/>
+    <target name="refreshWebapp" depends="refreshWebapp.pre, refreshWebapp.common, refreshWebapp.post"
             description="Refresh Webapp (no compile)"/>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -353,7 +353,7 @@
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  list
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-    <target name="tcList" depends="prepare, prepTc" description="List Tomcat WebApps">
+    <target name="tcList" depends="prepare, prepTc" description="List Tomcat Webapps">
         <list
                 url="${catalina.url.manager}"
                 username="${catalina.username}"
