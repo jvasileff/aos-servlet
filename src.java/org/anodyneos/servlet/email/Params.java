@@ -15,7 +15,6 @@ package org.anodyneos.servlet.email;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +29,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.anodyneos.servlet.util.HttpServletRequestAsMap;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -57,26 +57,6 @@ public class Params {
     public static final String CONTEXT_PARAM = "ctxParam";
     public static final String CGI = "CGI";
 
-    public static final Set CGI_VARIABLES = new HashSet();
-
-    static {
-        CGI_VARIABLES.add("AUTH_TYPE");
-        CGI_VARIABLES.add("REQUEST_METHOD");
-        CGI_VARIABLES.add("PATH_INFO");
-        CGI_VARIABLES.add("PATH_TRANSLATED");
-        CGI_VARIABLES.add("QUERY_STRING");
-        CGI_VARIABLES.add("REMOTE_USER");
-        CGI_VARIABLES.add("SCRIPT_NAME");
-        CGI_VARIABLES.add("CONTENT_LENGTH");
-        CGI_VARIABLES.add("CONTENT_TYPE");
-        CGI_VARIABLES.add("SERVER_PROTOCOL");
-        CGI_VARIABLES.add("SERVER_NAME");
-        CGI_VARIABLES.add("SERVER_PORT");
-        CGI_VARIABLES.add("REMOTE_ADDR");
-        CGI_VARIABLES.add("REMOTE_HOST");
-    }
-
-
     public static final char SEP_CHAR = ':';
     private static final String SEP_DOUBLE = "::";
     private static final String SEP_STRING = new String(new char[] {SEP_CHAR});
@@ -95,7 +75,7 @@ public class Params {
 
         // CGI
         initType(CGI);
-        reqAsMap = new HttpRequestAsMap(req);
+        reqAsMap = new HttpServletRequestAsMap(req);
 
         // store cookies into types
         initType(COOKIE);
@@ -479,119 +459,6 @@ public class Params {
             }
         }
         return sb.toString();
-    }
-
-    public class HttpRequestAsMap implements Map {
-        HttpServletRequest req;
-        public HttpRequestAsMap(HttpServletRequest req) {
-            this.req = req;
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#size()
-         */
-        public int size() {
-            return CGI_VARIABLES.size();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#clear()
-         */
-        public void clear() {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#isEmpty()
-         */
-        public boolean isEmpty() {
-            return false;
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#containsKey(java.lang.Object)
-         */
-        public boolean containsKey(Object key) {
-            return CGI_VARIABLES.contains(key);
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#containsValue(java.lang.Object)
-         */
-        public boolean containsValue(Object value) {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#values()
-         */
-        public Collection values() {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#putAll(java.util.Map)
-         */
-        public void putAll(Map t) {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#entrySet()
-         */
-        public Set entrySet() {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#keySet()
-         */
-        public Set keySet() {
-            return CGI_VARIABLES;
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#get(java.lang.Object)
-         */
-        public Object get(Object key) {
-            if (! (key instanceof String)) {
-                return null;
-            }
-            String k = (String) key;
-
-            if (k.equals("AUTH_TYPE")) {
-                return req.getAuthType();
-            } else if (k.equals("REQUEST_METHOD")) {
-                return req.getMethod();
-            } else if (k.equals("PATH_INFO")) {
-                return req.getPathInfo();
-            } else if (k.equals("PATH_TRANSLATED")) {
-                return req.getPathTranslated();
-            } else if (k.equals("QUERY_STRING")) {
-                return req.getQueryString();
-            } else if (k.equals("REMOTE_USER")) {
-                return req.getRemoteUser();
-            } else if (k.equals("SCRIPT_NAME")) {
-                return req.getServletPath();
-            } else if (k.equals("CONTENT_LENGTH")) {
-                return new Integer(req.getContentLength());
-            } else if (k.equals("CONTENT_TYPE")) {
-                return req.getContentType();
-            } else if (k.equals("SERVER_PROTOCOL")) {
-                return req.getProtocol();
-            } else if (k.equals("SERVER_NAME")) {
-                return req.getServerName();
-            } else if (k.equals("SERVER_PORT")) {
-                return new Integer(req.getServerPort());
-            } else if (k.equals("REMOTE_ADDR")) {
-                return req.getRemoteAddr();
-            } else if (k.equals("REMOTE_HOST")) {
-                return req.getRemoteHost();
-            }
-            return null;
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#remove(java.lang.Object)
-         */
-        public Object remove(Object key) {
-            throw new UnsupportedOperationException();
-        }
-        /* (non-Javadoc)
-         * @see java.util.Map#put(java.lang.Object, java.lang.Object)
-         */
-        public Object put(Object key, Object value) {
-            throw new UnsupportedOperationException();
-        }
     }
 
 }
