@@ -1,357 +1,410 @@
 package org.anodyneos.servlet.util;
 
-//package org.apache.commons.http;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.regex.*;
 
-/*
- * Copyright 2001,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import javax.servlet.http.HttpServletRequest;
 
-/**
- * This class parses the user agent string and sets javasciptOK and
- * cssOK following the rules described below.  If you want to check
- * for specific browsers/versions then use this class to parse the
- * user agent string and use the accessor methods in this class.
- *
- * JavaScriptOK means that the browser understands JavaScript on the
- * same level the Navigator 3 does.  Specifically, it can use named
- * images.  This allows easier rollovers.  If a browser doesn't do
- * this (Nav 2 or MSIE 3), then we just assume it can't do any
- * JavaScript.  Referencing images by load order is too hard to
- * maintain.
- *
- * CSSOK is kind of sketchy in that Nav 4 and MSIE work differently,
- * but they do seem to have most of the functionality.  MSIE 4 for the
- * Mac has buggy CSS support, so we let it do JavaScript, but no CSS.
- *
- * Ported from Leon's PHP code at
- * http://www.working-dogs.com/freetrade by Frank.
- *
- * @author <a href="mailto:frank.kim@clearink.com">Frank Y. Kim</a>
- * @author <a href="mailto:leon@clearink.com">Leon Atkisnon</a>
- * @author <a href="mailto:mospaw@polk-county.com">Chris Mospaw</a>
- * @author <a href="mailto:bgriffin@cddb.com">Benjamin Elijah Griffin</a>
- * @version $Id: BrowserDetector.java,v 1.1 2004-05-13 06:27:34 jvas Exp $
- */
-public class BrowserDetector
-{
-    protected static final String MSIE = "MSIE";
-    protected static final String OPERA = "Opera";
-    protected static final String MOZILLA = "Mozilla";
+public class BrowserDetector {
 
-    protected static final String WINDOWS = "Windows";
-    protected static final String UNIX = "Unix";
-    protected static final String MACINTOSH = "Macintosh";
+    public static final String MSIE = "MSIE";
+    public static final String SAFARI = "Safari";
+    public static final String OPERA = "Opera";
+    public static final String MOZILLA = "Mozilla";
+    public static final String NETSCAPE = "Netscape";
+    public static final String KONQUEROR = "Konqueror";
 
-    /** The user agent string. */
+    public static final String WINDOWS = "Windows";
+    public static final String MACINTOSH = "Macintosh";
+    public static final String X11 = "X11";
+    public static final String UNKNOWN = "unknown";
+
     private String userAgentString = "";
 
-    /** The browser name specified in the user agent string. */
-    private String browserName = "";
+    private String browserName = UNKNOWN;
+    private float browserVersion = (float) 0;
+    private String browserVersionString = "0";
+    private String platform = UNKNOWN;
 
-    /**
-     * The browser version specified in the user agent string.  If we
-     * can't parse the version just assume an old browser.
-     */
-    private float browserVersion = (float)1.0;
+    private static final Pattern cleanVersionPattern = Pattern.compile("([0-9]+(\\.[0-9]+){0,1}).*");
 
-    /**
-     * The browser platform specified in the user agent string.
-     */
-    private String browserPlatform = "unknown";
+    public static void main(String[] args) throws IOException {
+        // for testing, parse each arg if provided or each line of stdin
+        if (args.length != 0) {
+            for (int i = 0; i < args.length; i++) {
+                String userAgent = args[i];
+                BrowserDetector obj = new BrowserDetector();
+                obj.setUserAgentString(userAgent);
+                System.out.println(obj.platform + "; " + obj.browserName + "; " + obj.browserVersion);
+            }
+        } else {
+            BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+            for (String userAgent; (userAgent = in.readLine()) != null;) {
+                BrowserDetector obj = new BrowserDetector();
+                obj.setUserAgentString(userAgent);
+                System.out.println(obj.platform + "; " + obj.browserName + "; " + obj.browserVersionString);
+            }
+        }
+    }
 
-    /** Whether or not javascript works in this browser. */
-    private boolean javascriptOK = false;
+    public BrowserDetector() {
+    }
 
-    /** Whether or not CSS works in this browser. */
-    private boolean cssOK = false;
+    public BrowserDetector(String userAgentString) {
+        setUserAgentString(userAgentString);
+    }
 
-    /** Whether or not file upload works in this browser. */
-    private boolean fileUploadOK = false;
+    public BrowserDetector(HttpServletRequest req) {
+        setUserAgentString(req.getHeader("User-Agent"));
+    }
 
-    /**
-     * Constructor used to initialize this class.
-     *
-     * @param userAgentString A String with the user agent field.
-     */
-    public BrowserDetector(String userAgentString)
-    {
-        this.userAgentString = userAgentString;
+    public void setUserAgentString(String userAgentString) {
+        if (null == userAgentString) {
+            userAgentString = "";
+        } else {
+            this.userAgentString = userAgentString;
+        }
+
+        browserName = UNKNOWN;
+        browserVersion = (float) 0;
+        browserVersionString = "0";
+        platform = UNKNOWN;
         parse();
     }
 
-    /**
-     * Whether or not CSS works in this browser.
-     *
-     * @return True if CSS works in this browser.
-     */
-    public boolean isCssOK()
-    {
-        return cssOK;
+    private void parse() {
+        Pattern p;
+        Matcher m;
+
+        if (
+                trySafari() ||
+                tryMozilla() ||
+                tryOpera1() ||
+                tryOpera2() ||
+                tryMSIE() ||
+                tryOldNetscape() ||
+                tryKonqueror() ||
+                false ) {
+            // browser detected
+            return;
+        } else {
+            // browser not detected
+            //return;
+        }
     }
 
-    /**
-     * Whether or not file upload works in this browser.
-     *
-     * @return True if file upload works in this browser.
-     */
-    public boolean isFileUploadOK()
-    {
-        return fileUploadOK;
-    }
-
-    /**
-     * Whether or not Javascript works in this browser.
-     *
-     * @return True if Javascript works in this browser.
-     */
-    public boolean isJavascriptOK()
-    {
-        return javascriptOK;
-    }
-
-    /**
-     * The browser name specified in the user agent string.
-     *
-     * @return A String with the browser name.
-     */
-    public String getBrowserName()
-    {
+    public String getBrowserName() {
         return browserName;
     }
-
-    /**
-     * The browser platform specified in the user agent string.
-     *
-     * @return A String with the browser platform.
-     */
-    public String getBrowserPlatform()
-    {
-        return browserPlatform;
-    }
-
-    /**
-     * The browser version specified in the user agent string.
-     *
-     * @return A String with the browser version.
-     */
-    public float getBrowserVersion()
-    {
+    public float getBrowserVersion() {
         return browserVersion;
     }
-
-    /**
-     * The user agent string for this class.
-     *
-     * @return A String with the user agent.
-     */
-    public String getUserAgentString()
-    {
+    public String getBrowserVersionString() {
+        return browserVersionString;
+    }
+    public String getBrowserPlatform() {
+        return platform;
+    }
+    public String getUserAgentString() {
         return userAgentString;
     }
 
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // Safari
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern safariPattern = Pattern.compile(".*AppleWebKit\\/([^\\s]+).*");
+
     /**
-     * Helper method to initialize this class.
+     * @see http://developer.apple.com/internet/safari/safari_faq.html
+     * @return
      */
-    private void parse()
-    {
-        int versionStartIndex = userAgentString.indexOf("/");
-        int versionEndIndex = userAgentString.indexOf(" ");
-
-        // Get the browser name and version.
-        browserName = userAgentString.substring(0, versionStartIndex);
-        try
-        {
-            // Not all user agents will have a space in the reported
-            // string.
-            String agentSubstring = null;
-            if (versionEndIndex < 0)
-            {
-                agentSubstring =
-                    userAgentString.substring(versionStartIndex + 1);
+    private boolean trySafari() {
+        // Safari
+        //      Example: "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/125.5 (KHTML, like Gecko) Safari/125.9"
+        //      Pattern: "Mozilla/5.0 (xxx; xxx; ... xxx) AppleWebKit/xxx (KHTML, like Gecko) Safari/xxx"
+        //      Pattern: "Mozilla/5.0 (xxx; xxx; ... xxx) AppleWebKit/xxx (like Gecko) Safari/xxx"
+        //Pattern p = Pattern.compile("^Mozilla/5.0 .* AppleWebKit\\/([^\\s]+) (\\(KHTML, like Gecko\\)|\\(like Gecko\\)) Safari\\/([^\\/\\s]+).*");
+        Matcher m = safariPattern.matcher(userAgentString);
+        if (m.matches()) {
+            browserName = SAFARI;
+            browserVersionString = m.group(1);
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
             }
-            else
-            {
-                agentSubstring = userAgentString.substring
-                    (versionStartIndex + 1, versionEndIndex);
-            }
-            browserVersion = toFloat( agentSubstring );
+            platform = MACINTOSH;
+            return true;
+        } else {
+            return false;
         }
-        catch (NumberFormatException e)
-        {
-            // Just use the default value.
-        }
+    }
 
-        // MSIE lies about its name.  Of course...
-        if (userAgentString.indexOf(MSIE) != -1)
-        {
-            // Ex: Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)
-            versionStartIndex = (userAgentString.indexOf(MSIE) +
-                                 MSIE.length() + 1);
-            versionEndIndex = userAgentString.indexOf(";", versionStartIndex);
 
-            browserName = MSIE;
-            try
-            {
-                browserVersion = toFloat(userAgentString.substring
-                                         (versionStartIndex, versionEndIndex));
-            }
-            catch (NumberFormatException e)
-            {
-                // Just use the default value.
-            }
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // Opera
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern operaPattern1 = Pattern.compile(".* Opera ([^\\/\\s]+).*");
 
-            // PHP code
-            // $Browser_Name = "MSIE";
-            // $Browser_Version = strtok("MSIE");
-            // $Browser_Version = strtok(" ");
-            // $Browser_Version = strtok(";");
-        }
-
-        // Opera isn't completely honest, either...
-        // Modificaton by Chris Mospaw <mospaw@polk-county.com>
-        if (userAgentString.indexOf(OPERA) != -1)
-        {
-            //Ex: Mozilla/4.0 (Windows NT 4.0;US) Opera 3.61  [en]
-            versionStartIndex = (userAgentString.indexOf(OPERA) +
-                                 OPERA.length() + 1);
-            versionEndIndex = userAgentString.indexOf( " ",
-                                                       versionStartIndex );
-
+    private boolean tryOpera1() {
+        /* Opera #1
+                Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1) Opera 7.52  [en]
+                Mozilla/4.1 (compatible; MSIE 5.0; Symbian OS; Nokia 6600;452) Opera 6.20  [en-US]
+                Mozilla/5.0 (Windows NT 5.0; U) Opera 7.01  [en]
+        */
+        Matcher m = operaPattern1.matcher(userAgentString);
+        if (m.matches()) {
             browserName = OPERA;
-            try
-            {
-                browserVersion = toFloat(userAgentString.substring
-                                         (versionStartIndex, versionEndIndex));
-            }
-            catch (NumberFormatException e)
-            {
-                // Just use the default value.
+            browserVersionString = m.group(1);
+
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
             }
 
-            // PHP code
-            // $Browser_Name = "Opera";
-            // $Browser_Version = strtok("Opera");
-            // $Browser_Version = strtok("/");
-            // $Browser_Version = strtok(";");
-        }
+            platform = parsePlatform(userAgentString);
 
-
-        // Try to figure out what platform.
-        if ( (userAgentString.indexOf("Windows") != -1) ||
-             (userAgentString.indexOf("WinNT") != -1) ||
-             (userAgentString.indexOf("Win98") != -1) ||
-             (userAgentString.indexOf("Win95") != -1) )
-        {
-            browserPlatform = WINDOWS;
-        }
-
-        if (userAgentString.indexOf("Mac") != -1)
-        {
-            browserPlatform = MACINTOSH;
-        }
-
-        if (userAgentString.indexOf("X11") != -1)
-        {
-            browserPlatform =  UNIX;
-        }
-
-        if (browserPlatform == WINDOWS)
-        {
-            if (browserName.equals(MOZILLA))
-            {
-                if (browserVersion >= 3.0)
-                {
-                    javascriptOK = true;
-                    fileUploadOK = true;
-                }
-                if (browserVersion >= 4.0)
-                {
-                    cssOK = true;
-                }
-            }
-            else if (browserName == MSIE)
-            {
-                if (browserVersion >= 4.0)
-                {
-                    javascriptOK = true;
-                    fileUploadOK = true;
-                    cssOK = true;
-                }
-            }
-            else if (browserName == OPERA)
-            {
-                if (browserVersion >= 3.0)
-                {
-                    javascriptOK = true;
-                    fileUploadOK = true;
-                    cssOK = true;
-                }
-            }
-        }
-        else if (browserPlatform == MACINTOSH)
-        {
-            if (browserName.equals(MOZILLA))
-            {
-                if (browserVersion >= 3.0)
-                {
-                    javascriptOK = true;
-                    fileUploadOK = true;
-                }
-                if( browserVersion >= 4.0)
-                {
-                    cssOK = true;
-                }
-            }
-            else if (browserName == MSIE)
-            {
-                if (browserVersion >= 4.0)
-                {
-                    javascriptOK = true ;
-                    fileUploadOK = true;
-                }
-                if (browserVersion > 4.0)
-                {
-                    cssOK = true;
-                }
-            }
-        }
-        else if (browserPlatform ==  UNIX)
-        {
-            if (browserName.equals(MOZILLA))
-            {
-                if (browserVersion >= 3.0)
-                {
-                    javascriptOK = true;
-                    fileUploadOK = true;
-                }
-                if (browserVersion >= 4.0)
-                {
-                    cssOK = true;
-                }
-            }
+            return true;
+        } else {
+            return false;
         }
     }
+
+    private static final Pattern operaPattern2 = Pattern.compile("^Opera/([^\\/\\s]+).*");
+    private boolean tryOpera2() {
+        /* Opera #2
+                Opera/7.20 (Windows NT 5.1; U)  [en]
+        */
+        Matcher m = operaPattern2.matcher(userAgentString);
+        if (m.matches()) {
+            browserName = OPERA;
+            browserVersionString = m.group(1);
+
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
+            }
+
+            platform = parsePlatform(userAgentString);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // MSIE
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern msiePattern =
+        Pattern.compile(".*Mozilla/[0-9].[0-9][^\\(]* \\(compatible; MSIE ([^;\\)\\s]+).*");
+
+    private boolean tryMSIE() {
+        /* MSIE
+            Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)
+            Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; FunWebProducts)
+
+            Mozilla/4.0 (compatible ; MSIE 6.0; Windows NT 5.1)
+            Mozilla/4.0+(Compatible;+MSIE+6.0;+Windows+NT+5.0;+.NET+CLR+1.0.3705)
+            MSIE (MSIE 5.14; Mac_PowerPC)
+            UserAgent: Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 4.0)
+        */
+        Matcher m = msiePattern.matcher(userAgentString);
+        if ((userAgentString.indexOf("Opera") == -1) && m.matches()) {
+            browserName = MSIE;
+            browserVersionString = m.group(1);
+
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
+            }
+
+            platform = parsePlatform(userAgentString);
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // Old Netscape
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern oldNetscapePattern = Pattern.compile("Mozilla/([0-9\\.]*[^\\s\\(]*).*");
+
+    private boolean tryOldNetscape() {
+        // Old netscape does not have: MSIE, Gecko, Opera, Safari, AppleWebKit, Mozilla version < 5 and > 1.
+        if ( userAgentString.indexOf("MSIE") == -1 &&
+                userAgentString.indexOf("Gecko") == -1 &&
+                userAgentString.indexOf("Opera") == -1 &&
+                userAgentString.indexOf("AppleWebKit") == -1 &&
+                userAgentString.indexOf("Safari") == -1) {
+
+            Matcher m = oldNetscapePattern.matcher(userAgentString);
+
+            if (m.matches()) {
+                String bvString = m.group(1);
+                float bv = 5;
+
+                try {
+                    // take ignore the second dot forward.
+                    Matcher m2 = cleanVersionPattern.matcher(bvString);
+                    if (m2.matches()) {
+                        bv = Float.valueOf(m2.group(1)).floatValue();
+                    }
+                } catch (NumberFormatException e) {
+                    // use default value;
+                }
+
+                if (bv < 5.0 && bv > 1.0) {
+                    // now we have a match
+
+                    browserName = NETSCAPE;
+                    browserVersionString = bvString;
+                    browserVersion = bv;
+                    platform = parsePlatform(userAgentString);
+
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // Konqueror
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern konquerorPattern = Pattern.compile("^Mozilla.*Konqueror\\/([^;^\\/^\\)^\\s]+).*");
+
+    private boolean tryKonqueror() {
+        // Konqueror
+        //      Mozilla/5.0 (compatible; Konqueror/3.2; Linux) (KHTML, like Gecko)
+        //      Mozilla/5.0 (compatible; Konqueror/3.1; Linux)
+        //      Mozilla/5.0 (compatible; Konqueror/3.1-rc6; i686 Linux; 20021021)
+        //		Mozilla/5.0 (compatible; Konqueror/3.0; i686 Linux; 20020906)
+
+        Matcher m = konquerorPattern.matcher(userAgentString);
+        if (m.matches()) {
+            browserName = KONQUEROR;
+            browserVersionString = m.group(1);
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
+            }
+            platform = X11;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    // Mozilla
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+    private static final Pattern mozillaPattern1 = Pattern.compile(".*rv:([^;^\\/^\\)^\\s]+).*Gecko.*");
+    private static final Pattern mozillaPattern2 = Pattern.compile(".*(m[0-9][0-9]).*Gecko.*");
 
     /**
-     * Helper method to conver String to a float.
-     *
-     * @param s A String.
-     * @return The String converted to float.
+     * This is for all Mozilla >= 5 browsers including Mozilla, Netscape 6+, Firefox, Camino, etc.
+     * The version number returned is the Mozilla v:x.y number such as 1.0.2.
+     * @return
      */
-    private static final float toFloat(String s)
-    {
-        return Float.valueOf(s).floatValue();
+    private boolean tryMozilla() {
+        //      Mozilla/5.0 (Macintosh; U; PPC; en-US; rv:1.0.2) Gecko/20030208 Netscape/7.02
+        //      Mozilla/5.0 (Macintosh; N; PPC; en-US; m18) Gecko/20010131 Netscape6/6.01
+
+        // Either match "rv:x.y.z*Gecko*" or "m99*Gecko*"
+
+        boolean matched = false;
+
+        Matcher m = mozillaPattern1.matcher(userAgentString);
+        if (m.matches()) {
+            matched = true;
+            browserVersionString = m.group(1);
+            try {
+                // take ignore the second dot forward.
+                Matcher m2 = cleanVersionPattern.matcher(browserVersionString);
+                if (m2.matches()) {
+                    browserVersion = Float.valueOf(m2.group(1)).floatValue();
+                }
+            } catch (NumberFormatException e) {
+                // use default value;
+            }
+        } else {
+            m = mozillaPattern2.matcher(userAgentString);
+            if (m.matches()) {
+                matched = true;
+                browserVersionString = m.group(1);
+                try {
+                    browserVersion = ( Float.valueOf(m.group(1).substring(1)).floatValue() / 100F);
+                } catch (NumberFormatException e) {
+                    // should not happen; use default value;
+                }
+            }
+        }
+
+        if (matched) {
+            browserName = MOZILLA;
+            platform = parsePlatform(userAgentString);
+            return true;
+        } else {
+            return false;
+        }
     }
+
+    private static final String parsePlatform(String userAgent) {
+        String ret = UNKNOWN;
+        if (userAgent.indexOf("Windows") != -1) {
+            ret = WINDOWS;
+        } else if (userAgent.indexOf("Win98") != -1) {
+            ret = WINDOWS;
+        } else if (userAgent.indexOf("Mac") != -1) {
+            ret = MACINTOSH;
+        } else if (userAgent.indexOf("Linux") != -1) {
+            ret = X11;
+        } else if (userAgent.indexOf("X11") != -1) {
+            ret = X11;
+        }
+        return ret;
+    }
+
 }
