@@ -3,6 +3,7 @@ options {
     IGNORE_CASE = true;
     DEBUG_PARSER = false;
     STATIC = false;
+    UNICODE_INPUT = true;
 }
 
 PARSER_BEGIN(AutoHtmlParser)
@@ -46,7 +47,7 @@ TOKEN :
 |   <EOL:           "\n" | "\r" | "\r\n"  >
 |   <NONE:          "" > : WORD_OK // as last resort, try matching a word
 |   <#URL_MAILTO:   "mailto:" <EMAIL_USER> "@" <DOMAIN> >
-|   <#EMAIL_USER:   (["\u0021" - "\u007E"])+ >
+|   <#EMAIL_USER:   (["-", "." ,"0"-"9", ":", "=", "A"-"Z", "_", "a"-"z", "~" ])+ >
 |   <#DOMAIN_FTP:   <FTP_PREFIX> "." <DOMAIN> >
 |   <#DOMAIN_WWW:   <DOMAIN> "." <TLD>
 |                   <WWW_PREFIX> "." <DOMAIN> >
