@@ -21,6 +21,7 @@
     <property name="dir.build.java"             location="${dir.build}/java"/>
     <property name="dir.build.ide.classes"      location="${dir.build}/ide.classes"/>
     <property name="dir.build.ide.lib"          location="${dir.build}/ide.lib"/>
+    <property name="dir.build.ide.src"          location="${dir.build}/ide.src"/>
     <property name="file.jar"                   location="${dir.build.jar}/${ant.project.name}.jar"/>
     <property name="file.src.zip"               location="${dir.build.jar}/${ant.project.name}-src.zip"/>
 
@@ -45,13 +46,19 @@
         <include name="**/*.jpg"/>
         <include name="**/*.js"/>
         <include name="**/*.jsp"/>
+        <include name="**/*.jspf"/>
         <include name="**/*.pdf"/>
         <include name="**/*.png"/>
         <include name="**/*.svg"/>
         <include name="**/*.txt"/>
         <include name="**/*.xml"/>
+        <include name="**/*.ent"/>
         <include name="**/*.xsd"/>
         <include name="**/*.xsl"/>
+        <include name="**/*.xp"/>
+        <include name="**/*.xpreg"/>
+        <include name="**/*.xptld"/>
+        <include name="**/*.properties"/>
     </patternset>
 
     <patternset id="pattern.resources">
@@ -198,7 +205,7 @@
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  Refresh WebApp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-    <target name="refreshWebApp" depends="prepare" description="Refresh Webapp (no compile)">
+    <target name="refreshWebApp.common" depends="prepare">
         <!-- build context.xml -->
         <style  in="${dir.src.misc}/dummy.xml"
                 out="${file.build.context}"
@@ -226,6 +233,11 @@
             <fileset dir="${dir.build.classes}"/>
         </copy>
     </target>
+
+    <target name="refreshWebApp.pre"/>
+    <target name="refreshWebApp.post"/>
+    <target name="refreshWebApp" depends="refreshWebApp.pre, refreshWebApp.common, refreshWebApp.post"
+            description="Refresh Webapp (no compile)"/>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  jar
