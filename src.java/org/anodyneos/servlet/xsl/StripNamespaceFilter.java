@@ -3,6 +3,8 @@ package org.anodyneos.servlet.xsl;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -33,13 +35,20 @@ import org.xml.sax.helpers.XMLFilterImpl;
  */
 public class StripNamespaceFilter extends XMLFilterImpl {
 
-    private NamespaceMapping mappings;
+    private static final Log logger = LogFactory.getLog(StripNamespaceFilter.class);
 
+    private NamespaceMapping mappings;
     private NamespaceMapping defaultNSPrefixes;
 
     private Set namespaces = new HashSet();
-
     private int bigNum = (int) Math.pow(36, 3);
+
+    // instance variables to test for logging for performance.
+    private boolean logDebugEnabled = logger.isDebugEnabled();
+    private boolean logInfoEnabled = logger.isInfoEnabled();
+    private boolean logWarnEnabled = logger.isWarnEnabled();
+    private boolean logErrorEnabled = logger.isErrorEnabled();
+    private boolean logFatalEnabled = logger.isFatalEnabled();
 
     /**
      * Create a new instance; if setNamespaces() is not called, the new
@@ -74,12 +83,18 @@ public class StripNamespaceFilter extends XMLFilterImpl {
     }
 
     public void startDocument() throws SAXException {
+        if(logDebugEnabled) {
+            logger.debug("startDocument() called.");
+        }
         mappings = new NamespaceMapping();
         defaultNSPrefixes = new NamespaceMapping();
         super.startDocument();
     }
 
     public void endDocument() throws SAXException {
+        if(logDebugEnabled) {
+            logger.debug("endDocument() called.");
+        }
         mappings = null;
         defaultNSPrefixes = null;
         super.endDocument();
@@ -129,6 +144,13 @@ public class StripNamespaceFilter extends XMLFilterImpl {
     }
 
     public void endElement(String uri, String localName, String qName) throws SAXException {
+        if(logDebugEnabled) {
+            logger.debug("endElement("
+                    + uri
+                    + ", " + localName
+                    + ", " + qName
+                    + ") called.");
+        }
         /*
          * Don't trust uri, Xalan leaves this out sometimes for startElement
          * and sometimes for endElement. Use prefixMapping instead.
@@ -147,13 +169,18 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          */
         String prefix = parsePrefix(qName);
         String myLocalName = parseLocalName(localName);
-        String myURI = mappings.peek(prefix);
+        String myURI = mappings.getNamespaceURI(prefix);
+
+        if (logWarnEnabled && (null != uri && ! uri.equals(myURI)) || (null == uri && null != myURI)) {
+            logger.warn("endElement uri parameter does not match what was expected: \""
+                    + uri + "\" != \"" + myURI + "\"");
+        }
 
         if (namespaces.contains(myURI)) {
             super.endElement("", myLocalName, myLocalName);
         } else { // ! namespace.contains(uri)
             if (null == prefix || prefix.length() == 0) {
-                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + myLocalName;
+                String newQName = defaultNSPrefixes.getPrefix(myURI) + ":" + myLocalName;
                 super.endElement(myURI, myLocalName, newQName);
             } else { // prefix not empty
                 super.endElement(uri, myLocalName, qName);
@@ -162,6 +189,9 @@ public class StripNamespaceFilter extends XMLFilterImpl {
     }
 
     public void endPrefixMapping(String prefix) throws SAXException {
+        if(logDebugEnabled) {
+            logger.debug("endPrefixMapping(" + prefix + ") called.");
+        }
         /*
          * Always pop from mappings after done processing
          *
@@ -175,12 +205,12 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          * If uri not in namespaces and prefix != "" Call
          * super.endPrefixMappings
          */
-        String uri = mappings.peek(prefix);
+        String uri = mappings.getNamespaceURI(prefix);
         if (namespaces.contains(uri)) {
             // do nothing
         } else {
             if (null == prefix || prefix.length() == 0) {
-                String myPrefix = defaultNSPrefixes.findPrefixForURI(uri);
+                String myPrefix = defaultNSPrefixes.getPrefix(uri);
                 defaultNSPrefixes.pop(myPrefix);
                 // end mapping for this prefix if we no longer have references.
                 if (!defaultNSPrefixes.prefixExists(myPrefix)) {
@@ -195,6 +225,14 @@ public class StripNamespaceFilter extends XMLFilterImpl {
 
     public void startElement(String uri, String localName, String qName, Attributes attrs)
             throws SAXException {
+        if(logDebugEnabled) {
+            logger.debug("startElement("
+                    + uri
+                    + ", " + localName
+                    + ", " + qName
+                    + ", " + attrs
+                    + ") called.");
+        }
         /*
          * Don't trust uri, Xalan leaves this out sometimes for startElement
          * and sometimes for endElement. Use prefixMapping instead.
@@ -214,13 +252,18 @@ public class StripNamespaceFilter extends XMLFilterImpl {
         Attributes newAttrs = cleanAttributes(attrs);
         String prefix = parsePrefix(qName);
         String myLocalName = parseLocalName(localName);
-        String myURI = mappings.peek(prefix);
+        String myURI = mappings.getNamespaceURI(prefix);
+
+        if (logWarnEnabled && (null != uri && ! uri.equals(myURI)) || (null == uri && null != myURI)) {
+            logger.warn("startElement uri parameter does not match what was expected: \""
+                    + uri + "\" != \"" + myURI + "\"");
+        }
 
         if ("".equals(myURI) || namespaces.contains(myURI)) {
             super.startElement("", myLocalName, myLocalName, newAttrs);
         } else { // ! namespace.contains(uri)
             if (null == prefix || prefix.length() == 0) {
-                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + myLocalName;
+                String newQName = defaultNSPrefixes.getPrefix(myURI) + ":" + myLocalName;
                 super.startElement(myURI, myLocalName, newQName, newAttrs);
             } else { // prefix not empty
                 super.startElement(uri, myLocalName, qName, newAttrs);
@@ -229,6 +272,12 @@ public class StripNamespaceFilter extends XMLFilterImpl {
     }
 
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
+        if (logDebugEnabled) {
+            logger.debug("startPrefixMapping("
+                    + prefix
+                    + ", " + uri
+                    + ") called.");
+        }
         /*
          * Store mapping in mappings
          *
@@ -252,7 +301,7 @@ public class StripNamespaceFilter extends XMLFilterImpl {
             // do nothing.
         } else { // ! namespaces.contains(uri)
             if (null == prefix || prefix.length() == 0) {
-                String myPrefix = defaultNSPrefixes.findPrefixForURI(uri);
+                String myPrefix = defaultNSPrefixes.getPrefix(uri);
                 if (null != myPrefix) {
                     // add another "reference" for when endPrefixMapping is
                     // called

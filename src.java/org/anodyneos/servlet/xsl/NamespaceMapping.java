@@ -1,7 +1,9 @@
 package org.anodyneos.servlet.xsl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -15,6 +17,8 @@ import java.util.Stack;
  * This class uses a <code>Stack</code> to keep track of multiple uri
  * mappings for a prefix. Prefixes may be any string including the empty
  * string.
+ *
+ * TODO: make more compatible with javax.xml.namespaces.NamespaceContext with regards to well known URIs.
  *
  * @author jvas
  */
@@ -77,8 +81,19 @@ public class NamespaceMapping {
      *
      * @param prefix
      * @return The namespace uri
+     * @deprecated
      */
     public String peek(String prefix) {
+        return getNamespaceURI(prefix);
+    }
+
+    /**
+     * Returns the current namespace uri for the given prefix.
+     *
+     * @param prefix
+     * @return The namespace uri
+     */
+    public String getNamespaceURI(String prefix) {
         Stack stack = (Stack) prefixMap.get(prefix);
         if (null == stack) {
             return "";
@@ -108,14 +123,82 @@ public class NamespaceMapping {
      * @param uri
      *            The uri to search for.
      * @return The prefix to use for the uri or null if none exists.
+     * @deprecated
      */
     public String findPrefixForURI(String uri) {
+        return getPrefix(uri);
+    }
+
+    /**
+     * Provides reverse lookup; namespace uri -> prefix. The first prefix found
+     * will be returned. Multiple calls to this method may return different
+     * prefixes if more than one prefix is mapped to the given namespace uri.
+     *
+     * @param uri
+     *            The uri to search for.
+     * @return The prefix to use for the uri or null if none exists.
+     */
+    public String getPrefix(String namespaceURI) {
         Iterator it = prefixMap.keySet().iterator();
         while (it.hasNext()) {
             String prefix = (String) it.next();
             Stack stack = (Stack) prefixMap.get(prefix);
-            if (uri.equals((String) stack.peek())) { return prefix; }
+            if (namespaceURI.equals((String) stack.peek())) { return prefix; }
         }
         return null;
     }
+
+    /**
+     * Returns an unmodifiable Iterator for all currently bound prefixes.
+     *
+     * @return The iterator.
+     */
+    public Iterator getPrefixes() {
+        return new Iterator() {
+            Iterator keys = prefixMap.keySet().iterator();
+            public boolean hasNext() {
+                return keys.hasNext();
+            }
+            public Object next() {
+                return keys.next();
+            }
+            public void remove() {
+                throw new UnsupportedOperationException("This iterator is not modifiable.");
+            }
+        };
+    }
+
+    /**
+     * Get all prefixes bound to a Namespace URI in the current scope.
+     *
+     * @param namespaceURI
+     *            The uri to search for.
+     * @return the Iterator
+     */
+    public Iterator getPrefixes(String namespaceURI) {
+        final Set prefixes = new HashSet();
+
+        Iterator it = prefixMap.keySet().iterator();
+        while (it.hasNext()) {
+            String prefix = (String) it.next();
+            Stack stack = (Stack) prefixMap.get(prefix);
+            if (namespaceURI.equals((String) stack.peek())) {
+                prefixes.add(prefix);
+            }
+        }
+
+        return new Iterator() {
+            Iterator values = prefixes.iterator();
+            public boolean hasNext() {
+                return values.hasNext();
+            }
+            public Object next() {
+                return values.next();
+            }
+            public void remove() {
+                throw new UnsupportedOperationException("This iterator is not modifiable.");
+            }
+        };
+    }
+
 }
