@@ -59,6 +59,8 @@ import org.xml.sax.helpers.XMLFilterImpl;
  */
 public class XSLTServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 3616450111505576248L;
+
     private static final String DEFAULT_SERVLET = "fileServlet";
     private static final String CLEAR_CACHE = "clearCache";
     private static final String CACHE_SIZE = "cacheSize";

@@ -26,6 +26,8 @@ import org.xml.sax.SAXException;
 
 public class EmailServlet extends javax.servlet.http.HttpServlet {
 
+    private static final long serialVersionUID = 3544676161419817017L;
+
     private static final String PARAM_OP = "aos.op";
     private static final String PARAM_CONFIG_FILE = "aos.configFile";
     private static final String PARAM_CONFIG_XSL = "aos.configXsl";

@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class EchoRawServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 3257563988643756338L;
+
     public void service(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
         // print the header and debug info to system out
         java.util.Enumeration en = req.getHeaderNames();

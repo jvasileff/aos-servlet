@@ -22,6 +22,8 @@ import org.anodyneos.servlet.util.HttpServletRequestAsMap;
 
 public class EchoServlet extends HttpServlet {
 
+    private static final long serialVersionUID = 3761131517971215408L;
+
     static String CONTINUE_URL = "continueURL";
     static String INFO = "helpText";
 
