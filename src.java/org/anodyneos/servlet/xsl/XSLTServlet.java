@@ -14,6 +14,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -49,7 +50,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * are cached based on the timestamp. Simply update the timestamp of the
  * stylesheet to force a refresh.
  *
- * @TODO: Check for threading issues, such as docbuilder
+ * TODO: Check for threading issues, pool docBuilders?
  *
  * @author John Vasileff
  * @version 1.0, 8/31/2000
@@ -78,7 +79,7 @@ public class XSLTServlet extends HttpServlet {
 
     private TemplatesCache templatesCache;
     private UnifiedResolver resolver;
-    private javax.xml.parsers.DocumentBuilder docBuilder;
+    private DocumentBuilderFactory docBuilderFactory;
     private SAXParserFactory validatingSPF;
 
     private boolean outputValidation = false;
@@ -144,20 +145,13 @@ public class XSLTServlet extends HttpServlet {
             templatesCache.setCacheEnabled(true);
         }
 
-        // Setup documentBuilder (for xml input)
-        try {
-            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-            docBuilderFactory.setNamespaceAware(true);
-            if (IP_FALSE.equals(servletConfig.getInitParameter(IP_INPUT_VALIDATION))) {
-                docBuilderFactory.setValidating(false);
-            } else {
-                docBuilderFactory.setValidating(true);
-            }
-            docBuilder = docBuilderFactory.newDocumentBuilder();
-            docBuilder.setErrorHandler(new GenericErrorHandler());
-            docBuilder.setEntityResolver(resolver);
-        } catch (javax.xml.parsers.ParserConfigurationException e) {
-            throw new ServletException(e);
+        // Setup documentBuilderFactory (for xml input)
+        docBuilderFactory = DocumentBuilderFactory.newInstance();
+        docBuilderFactory.setNamespaceAware(true);
+        if (IP_FALSE.equals(servletConfig.getInitParameter(IP_INPUT_VALIDATION))) {
+            docBuilderFactory.setValidating(false);
+        } else {
+            docBuilderFactory.setValidating(true);
         }
 
         // Setup SAXParserFactory for use when validating output
@@ -267,6 +261,7 @@ public class XSLTServlet extends HttpServlet {
                     return;
                 }
 
+                DocumentBuilder docBuilder = newDocBuilder();
                 Document doc = docBuilder.parse(inputStream, "webapp://" + req.getServletPath());
 
                 // rawXML ?
@@ -578,6 +573,13 @@ public class XSLTServlet extends HttpServlet {
         }
         browserDetector = new BrowserDetector(userAgent);
         return browserDetector;
+    }
+
+    private DocumentBuilder newDocBuilder() throws ParserConfigurationException {
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        docBuilder.setErrorHandler(new GenericErrorHandler());
+        docBuilder.setEntityResolver(resolver);
+        return docBuilder;
     }
 
 }
