@@ -32,6 +32,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.anodyneos.commons.net.ClassLoaderURIHandler;
 import org.anodyneos.commons.net.URI;
+import org.anodyneos.commons.xml.StripNamespaceFilter;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
 import org.anodyneos.servlet.net.ServletContextURIHandler;
