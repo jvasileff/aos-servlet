@@ -43,7 +43,7 @@ TOKEN :
 |   <URL_WWW:       <DOMAIN_WWW> (<PATH_URL>)? >
 |   <EMAIL:         <EMAIL_USER> "@" <DOMAIN_BIG> >
 |   <SPACE:         ([" ", "\t", "\f"])+  >
-|   <EOL:           "\n" | "\r" | "\n\r"  >
+|   <EOL:           "\n" | "\r" | "\r\n"  >
 |   <NONE:          "" > : WORD_OK // as last resort, try matching a word
 |   <#URL_MAILTO:   "mailto:" <EMAIL_USER> "@" <DOMAIN> >
 |   <#EMAIL_USER:   (["\u0021" - "\u007E"])+ >
