@@ -114,7 +114,8 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         // Read configuration and setup context object
         try {
             params = new Params(this, req);
-            configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
+            //configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
+            configURI = new URI("webapp://" + req.getServletPath());
             configDoc = getDocumentBuilder().parse(
                     resolver.resolveEntity("", configURI.toString()));
             ctx = new EmailContext(templatesCache, resolver, params,

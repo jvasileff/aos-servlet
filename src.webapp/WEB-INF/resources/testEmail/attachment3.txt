@@ -1,0 +1,9 @@
+This is a sample text attachment.
+
+from name:  {reqParam::fromName}
+from addr:  {reqParam::fromAddr}
+
+to name:    {reqParam::toName}
+to addr:    {reqParam::toAddr}
+
+subject:    {reqParam::subject}

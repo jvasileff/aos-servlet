@@ -107,7 +107,7 @@
 
     <servlet-mapping>
         <servlet-name>EmailServlet</servlet-name>
-        <url-pattern>/email/*</url-pattern>
+        <url-pattern>*.xeml</url-pattern>
     </servlet-mapping>
 
 </web-app>

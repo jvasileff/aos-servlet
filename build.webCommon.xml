@@ -37,6 +37,7 @@
         <include name="**/*.css"/>
         <include name="**/*.csv"/>
         <include name="**/*.dtd"/>
+        <include name="**/*.xeml"/>
         <include name="**/*.gif"/>
         <include name="**/*.htm"/>
         <include name="**/*.html"/>
