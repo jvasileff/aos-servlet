@@ -1,0 +1,34 @@
+<config successRedirect="../../testEmailSuccess.html" failureRedirect="../../testEmailFailure.html">
+
+    <email>
+        <from name="{reqParam::fromName}" address="{reqParam::fromAddr}"/>
+        <to name="{reqParam::toName}" address="{reqParam::toAddr}"/>
+        <subject>[test email] {reqParam::subject}</subject>
+
+        <multipart>
+            <multipart subType="alternative">
+                <part mimeType="text/plain">
+                    <content>{reqParam::fromName}: This is an HTML email message.  Please configure your email software to view HTML email.</content>
+                </part>
+                <part mimeType="text/html">
+                    <xslResultContent path="message.xsl"/>
+                </part>
+            </multipart>
+            <part mimeType="text/html" fileName="attachment1.html">
+                <content><![CDATA[<html><body><b>This is a part #1.</b></body></html> ]]></content>
+            </part>
+            <part mimeType="text/html" fileName="attachment2.html">
+                <substResultContent><![CDATA[<html><body><b>This is a part #2.</b></body></html> ]]></substResultContent>
+            </part>
+            <part mimeType="text/plain" fileName="attachment3.txt">
+                <substResultContent path="attachment3.txt"/>
+            </part>
+            <part mimeType="image/jpg" fileName="stl.jpg">
+                <fileContent path="stl.jpg"/>
+            </part>
+        </multipart>
+    </email>
+
+    <!-- more email elements may be added to send more than one message per request -->
+
+</config>

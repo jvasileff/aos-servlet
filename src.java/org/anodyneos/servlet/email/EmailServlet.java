@@ -156,10 +156,24 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                 out.println("</body></html>");
             }
         } catch (Exception e) {
+            log("Error sending email", e);
+            String failureRedirect = null;
+            try {
+                failureRedirect =
+                    configDoc.getDocumentElement().getAttribute("failureRedirect");
+            } catch (Throwable t) {
+                // noop
+            }
             if (!res.isCommitted()) {
                 res.reset();
-                res.setContentType("text/html");
+                if (null != failureRedirect) {
+                    res.sendRedirect(failureRedirect);
+                } else {
+                    res.setContentType("text/html");
+                    printErrorMessage(res.getWriter(), e);
+                }
             }
+            printErrorMessage(res.getWriter(), e);
             java.io.PrintWriter eout = res.getWriter();
             eout.println("<h1>Exception Thrown</h1>");
             eout.println("<p>");
@@ -190,9 +204,9 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         }
 
         // find redirect
-        Element successRedirect = Util.getFirstElement(config, "successRedirect");
-        if (successRedirect != null) {
-            return successRedirect.getAttribute("url");
+        String successRedirect = config.getAttribute("successRedirect");
+        if (! "".equals(successRedirect)) {
+            return successRedirect;
         } else {
             return null;
         }
@@ -205,6 +219,17 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         docBuilder.setErrorHandler(new GenericErrorHandler());
         docBuilder.setEntityResolver(resolver);
         return docBuilder;
+    }
+
+    protected void printErrorMessage(PrintWriter eout, Exception e) {
+        eout.println("<h1>Exception Thrown</h1>");
+        eout.println("<p>");
+        eout.println(e.toString());
+        eout.println("<p>");
+        eout.println("<h1>Stack Trace</h1>");
+        eout.println("\n<pre>");
+        e.printStackTrace(eout);
+        eout.println("</pre>");
     }
 
 }

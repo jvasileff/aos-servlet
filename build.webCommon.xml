@@ -46,6 +46,7 @@
         <include name="**/*.pdf"/>
         <include name="**/*.png"/>
         <include name="**/*.svg"/>
+        <include name="**/*.txt"/>
         <include name="**/*.xml"/>
         <include name="**/*.xsd"/>
         <include name="**/*.xsl"/>
