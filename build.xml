@@ -29,6 +29,7 @@
     <property name="resolver.jar" location="${dir.jars}/xml-commons-resolver-1.1/resolver.jar"/>
     <property name="servlet.jar" location="${dir.jars}/servlet-api-2.2/servlet.jar"/>
 
+    <property name="xml-apis.jar" location="${dir.jars}/xerces-2.6.0/xml-apis.jar"/>
     <property name="xalan.jar" location="${dir.jars}/xalan-2.6.2/xalan.jar"/>
     <property name="xercesImpl.jar" location="${dir.jars}/xerces-2.6.0/xercesImpl.jar"/>
 
@@ -59,6 +60,7 @@
         <copy toDir="${dir.build.ide.lib}" file="${pop3.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${smtp.jar}"/>
 
+        <copy toDir="${dir.build.ide.lib}" file="${xml-apis.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${xalan.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
 
