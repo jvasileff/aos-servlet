@@ -9,6 +9,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.net.URLConnection;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -289,17 +290,18 @@ public class XSLTServlet extends HttpServlet {
                 if(clientCache) {
                     // either (1)
                     URL url = getServletContext().getResource(req.getServletPath());
-                    if(url.getProtocol().equals("file")) {
-                        File resourceFile = new File(url.getFile());
-                        long lastModified = resourceFile.lastModified();
+                    URLConnection conn = url.openConnection();
+                    long lastModified = conn.getLastModified();
+                    if(lastModified != 0) {
                         if(req.getDateHeader("If-Modified-Since") < lastModified) {
-                            res.setDateHeader("Last-Modified", lastModified);
+                            // adding 1 second since client rounds to the second.
+                            res.setDateHeader("Last-Modified", lastModified + 1000);
                         } else {
                             res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
                             return;
                         }
                     } else {
-                        // using compressed war, assume client has most recent file
+                        // using compressed war?, assume client has most recent file
                         if(req.getDateHeader("If-Modified-Since") > 0) {
                             res.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
                             return;
