@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+
+<!--****************************************************************************
+**
+**  ANODYNE OS - SERVLET
+**
+*****************************************************************************-->
+
+<project name="anodyneos-servlet" default="compile" basedir=".">
+
+    <property file="build.properties"/>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  common
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+    <import file="build.webCommon.xml"/>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  required jars
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+    <!--
+        ALSO NEED:
+            anodyneos-commons.jar
+    -->
+    <property name="bsf.jar" location="${dir.jars}/ibm-bsf-2.2/bsf.jar"/>
+    <property name="javacc.jar" location="${dir.jars}/javacc-3.2/javacc.jar"/>
+    <property name="js.jar" location="${dir.jars}/rhino-1.5R5/js.jar"/>
+    <property name="jakarta-regexp-1.3.jar" location="${dir.jars}/jakarta-regexp-1.3/jakarta-regexp-1.3.jar"/>
+    <property name="resolver.jar" location="${dir.jars}/xml-commons-resolver-1.1/resolver.jar"/>
+    <property name="servlet.jar" location="${dir.jars}/servlet-api-2.2/servlet.jar"/>
+
+    <!-- non-free -->
+    <property name="activation.jar" location="${dir.jars.notfree}/jaf-1.0.2/activation.jar"/>
+    <property name="imap.jar" location="${dir.jars.notfree}/javamail-1.3.1/imap.jar"/>
+    <property name="mail.jar" location="${dir.jars.notfree}/javamail-1.3.1/mail.jar"/>
+    <property name="mailapi.jar" location="${dir.jars.notfree}/javamail-1.3.1/mailapi.jar"/>
+    <property name="pop3.jar" location="${dir.jars.notfree}/javamail-1.3.1/pop3.jar"/>
+    <property name="smtp.jar" location="${dir.jars.notfree}/javamail-1.3.1/smtp.jar"/>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  prepare.post
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+    <target name="prepare.post">
+        <!-- ide.lib -->
+        <copy toDir="${dir.build.ide.lib}" file="${anodyneos-commons.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${bsf.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${javacc.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${js.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${jakarta-regexp-1.3.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${resolver.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${servlet.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${activation.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${imap.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${mail.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${mailapi.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${pop3.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${smtp.jar}"/>
+
+        <!-- paths -->
+        <path id="path.compile">
+            <fileset id="fs.lib" dir="${dir.build.ide.lib}">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+
+        <fileset id="fs.jars" dir="${dir.build.ide.lib}">
+            <include name="*.jar"/>
+            <exclude name="servlet.jar"/>
+        </fileset>
+    </target>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  compile.pre
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+    <target name="compile.pre" depends="autoHtmlGen"/>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  autoHtmlPrepare
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+    <target name="autoHtmlPrepare" depends="prepare">
+        <mkdir dir="${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
+
+        <uptodate
+            property="autoHtml.notRequired"
+            targetfile="${dir.build.java}/org/anodyneos/servlet/xsl/xalan/AutoHtmlParser.java">
+            <srcfiles dir="${dir.src.java}/org/anodyneos/servlet/xsl/xalan" includes="AutoHtmlParser.jj"/>
+        </uptodate>
+    </target>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  autoHtmlGen
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+    <target name="autoHtmlGen" depends="prepare, autoHtmlPrepare" unless="autoHtml.notRequired">
+        <java   classname="org.javacc.parser.Main"
+                fork="yes"
+                failonerror="true" >
+            <classpath refid="path.compile"/>
+            <arg line="-OUTPUT_DIRECTORY=${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
+            <arg line="-STATIC=false"/>
+            <arg line="${dir.src.java}/org/anodyneos/servlet/xsl/xalan/AutoHtmlParser.jj"/>
+        </java>
+    </target>
+
+</project>
+

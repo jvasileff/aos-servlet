@@ -1,0 +1,107 @@
+options {
+    LOOKAHEAD = 1;
+    IGNORE_CASE = true;
+    DEBUG_PARSER = false;
+    STATIC = false;
+}
+
+PARSER_BEGIN(AutoHtmlParser)
+
+package org.anodyneos.servlet.xsl.xalan;
+
+public abstract class AutoHtmlParser {
+
+    /*
+        These abstract methods provide the ability to process the parsed
+        result.
+    */
+    protected abstract void processWord(String s);
+    protected abstract void processSpace(String s);
+    protected abstract void processEol(String s);
+    protected abstract void processEmail(String s);
+    protected abstract void processUrl(String s);
+    protected abstract void processFtp(String s);
+    protected abstract void processWww(String s);
+
+}
+
+PARSER_END(AutoHtmlParser)
+
+/*
+    Whitespace not forced after A or B
+
+    Path not allowed (mozilla):
+       "\"", "'", ")", "<", ">", "]", "|", "}"
+       Path cannot end in ".", ";"
+       Path section of URLs must start with either "/" or "?".
+*/
+
+TOKEN :
+{
+    <URL_FULL:      <URL_MAILTO> | (<PROTOCOL> "://" <DOMAIN> (<PATH_URL>)?) >
+|   <URL_FTP:       <DOMAIN_FTP> (<PATH_URL>)? >
+|   <URL_WWW:       <DOMAIN_WWW> (<PATH_URL>)? >
+|   <EMAIL:         <EMAIL_USER> "@" <DOMAIN_BIG> >
+|   <SPACE:         ([" ", "\t", "\f"])+  >
+|   <EOL:           "\n" | "\r" | "\n\r"  >
+|   <NONE:          "" > : WORD_OK // as last resort, try matching a word
+|   <#URL_MAILTO:   "mailto:" <EMAIL_USER> "@" <DOMAIN> >
+|   <#EMAIL_USER:   (["\u0021" - "\u007E"])+ >
+|   <#DOMAIN_FTP:   <FTP_PREFIX> "." <DOMAIN> >
+|   <#DOMAIN_WWW:   <DOMAIN> "." <TLD>
+|                   <WWW_PREFIX> "." <DOMAIN> >
+|   <#DOMAIN_BIG:   (<DOMAIN_PART> ".")+ <DOMAIN_PART> >
+|   <#DOMAIN:       (<DOMAIN_PART> ".")* <DOMAIN_PART> >
+|   <#DOMAIN_PART:  (  ["a"-"z"] (["a"-"z", "0"-"9", "-"])* (["a"-"z", "0"-"9"])+  )
+|                   (  ["a"-"z"] (["a"-"z", "0"-"9"])*) >
+|   <#PROTOCOL:     "news" | "http" | "https" | "ftp" | "mailto" >
+|   <#TLD:          "com" | "net" | "org" | "gov" >
+|   <#WWW_PREFIX:   "www" >
+|   <#FTP_PREFIX:   "ftp" >
+|   <#PATH_URL:     ("/" | "?") <PATH> >
+|   <#PATH:         ([  "!","#","$","%","&","(","*","+", ",","-",".","/","0"-"9",":",";",
+                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])*
+                    ([  "!","#","$","%","&","(","*","+", ",","-",    "/","0"-"9",":",
+                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])+ >
+}
+
+<WORD_OK>
+TOKEN :
+{
+    // match characters and punctuation seperately
+    // in order to match things HTML text, for example:
+    // <a href="http://www.news.com">www.news.com</a>
+    //<WORD:          (~[" ", "\t", "\n", "\r", "\f"])+ > : DEFAULT
+    <WORD:          <CHARS> | <PUNCTUATION> > : DEFAULT
+|   <#CHARS:        (["a"-"z"])+ >
+|   <#PUNCTUATION:  (~["a"-"z", " ", "\t", "\n", "\r", "\f"])+ >
+}
+
+void Input():
+{
+    Token t = null;
+}
+{
+    (
+        (
+              t = <EMAIL>
+            | t = <URL_FULL>
+            | t = <URL_WWW>
+            | t = <URL_FTP>
+            | t = <SPACE>
+            | t = <EOL>
+            | t = <NONE>        // enable word matching
+            | t = <WORD>
+        )
+        {
+            if (t.kind == EMAIL     ) processEmail(t.image);
+            if (t.kind == URL_FULL  ) processUrl(t.image);
+            if (t.kind == URL_WWW   ) processWww(t.image);
+            if (t.kind == URL_FTP   ) processFtp(t.image);
+            if (t.kind == WORD      ) processWord(t.image);
+            if (t.kind == SPACE     ) processSpace(t.image);
+            if (t.kind == EOL       ) processEol(t.image);
+        }
+    )*
+    <EOF>
+}

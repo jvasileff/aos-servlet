@@ -1,0 +1,15 @@
+# TOMCAT
+catalina.home:C:/path/to/jakarta-tomcat-5.0.19
+catalina.username: admin
+catalina.password: admin
+catalina.url.manager: http://localhost:8080/manager
+
+# COMPILER
+compile.deprecation:off
+compile.debug:true
+compile.debuglevel:lines,source
+
+# MISC
+webapp.context: /aos-servlet
+webapp.reloadable: true
+
