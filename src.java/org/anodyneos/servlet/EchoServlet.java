@@ -27,6 +27,7 @@ public class EchoServlet extends HttpServlet {
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
         Enumeration paramNames = req.getParameterNames();
+        res.setContentType("text/html");
         java.io.PrintWriter out = res.getWriter();
 
         out.println("<html><head><title>Echo Servlet</title></head>");
