@@ -88,21 +88,36 @@ public class StripNamespaceFilter extends XMLFilterImpl {
     private Attributes cleanAttributes(Attributes attrs) {
         AttributesImpl newAttrs = null;
         for (int i = 0; i < attrs.getLength(); i++) {
-            if (namespaces.contains(attrs.getURI(i))) {
+            String qName = attrs.getQName(i);
+            String localName = attrs.getLocalName(i);
+            String value = attrs.getValue(i);
+            String uri = attrs.getURI(i);
+            String type = attrs.getType(i);
+            boolean skipXMLNS = false;
+
+            if ((!(null == qName)) &&
+                    (qName.equals("xmlns") || qName.startsWith("xmlns:")) &&
+                    namespaces.contains(value)) {
+                skipXMLNS = true; // skip these namespace delcarations
+                // NOTE, we could test for URI == "http://www.w3.org/2000/xmlns/", but I don't trust the input
+                // and it should be OK to assume xmlns is used for nothing but namespaces.
+            }
+
+            if (skipXMLNS || namespaces.contains(uri)) {
                 if (null == newAttrs) {
                     // catch up
                     newAttrs = new AttributesImpl();
                     for (int j = 0; j < i; j++) {
                         newAttrs.addAttribute(attrs.getURI(j), attrs.getLocalName(j), attrs
-                                .getQName(j), attrs.getType(j), attrs.getValue(j));
+                            .getQName(j), attrs.getType(j), attrs.getValue(j));
                     }
                 }
-                newAttrs.addAttribute("", attrs.getLocalName(i), attrs.getLocalName(i), attrs
-                        .getType(i), attrs.getValue(i));
+                if (! skipXMLNS) {
+                    newAttrs.addAttribute("", localName, localName, type, value);
+                }
             } else if (null != newAttrs) {
                 // keep up
-                newAttrs.addAttribute(attrs.getURI(i), attrs.getLocalName(i), attrs.getQName(i),
-                        attrs.getType(i), attrs.getValue(i));
+                newAttrs.addAttribute(uri, localName, qName, type, value);
             }
         }
 
@@ -118,6 +133,8 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          * Don't trust uri, Xalan leaves this out sometimes for startElement
          * and sometimes for endElement. Use prefixMapping instead.
          *
+         * Don't trust localName - xsltc has localName==qName sometimes (at least for endElement).
+         *
          * If uri is in namespaces call super.endElement with "", localName,
          * localName
          *
@@ -129,16 +146,17 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          *
          */
         String prefix = parsePrefix(qName);
+        String myLocalName = parseLocalName(localName);
         String myURI = mappings.peek(prefix);
 
         if (namespaces.contains(myURI)) {
-            super.endElement("", localName, localName);
+            super.endElement("", myLocalName, myLocalName);
         } else { // ! namespace.contains(uri)
             if (null == prefix || prefix.length() == 0) {
-                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + localName;
-                super.endElement(myURI, localName, newQName);
+                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + myLocalName;
+                super.endElement(myURI, myLocalName, newQName);
             } else { // prefix not empty
-                super.endElement(uri, localName, qName);
+                super.endElement(uri, myLocalName, qName);
             }
         }
     }
@@ -181,6 +199,8 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          * Don't trust uri, Xalan leaves this out sometimes for startElement
          * and sometimes for endElement. Use prefixMapping instead.
          *
+         * Don't trust localName - xsltc has localName==qName sometimes (at least for endElement).
+         *
          * If uri is in namespace or no namespace for element call startElement
          * with "", localName, localName, clean(attrs)
          *
@@ -193,16 +213,17 @@ public class StripNamespaceFilter extends XMLFilterImpl {
          */
         Attributes newAttrs = cleanAttributes(attrs);
         String prefix = parsePrefix(qName);
+        String myLocalName = parseLocalName(localName);
         String myURI = mappings.peek(prefix);
 
         if ("".equals(myURI) || namespaces.contains(myURI)) {
-            super.startElement("", localName, localName, newAttrs);
+            super.startElement("", myLocalName, myLocalName, newAttrs);
         } else { // ! namespace.contains(uri)
             if (null == prefix || prefix.length() == 0) {
-                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + localName;
-                super.startElement(myURI, localName, newQName, newAttrs);
+                String newQName = defaultNSPrefixes.findPrefixForURI(myURI) + ":" + myLocalName;
+                super.startElement(myURI, myLocalName, newQName, newAttrs);
             } else { // prefix not empty
-                super.startElement(uri, localName, qName, newAttrs);
+                super.startElement(uri, myLocalName, qName, newAttrs);
             }
         }
     }
@@ -281,6 +302,19 @@ public class StripNamespaceFilter extends XMLFilterImpl {
                 return "";
             } else {
                 return qName.substring(0, colon);
+            }
+        }
+    }
+
+    private String parseLocalName(String qName) {
+        if (null == qName || qName.length() == 0) {
+            return "";
+        } else {
+            int colon = qName.indexOf(':');
+            if (-1 == colon) {
+                return qName;
+            } else {
+                return qName.substring(colon + 1);
             }
         }
     }
