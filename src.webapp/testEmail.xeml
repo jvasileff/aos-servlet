@@ -33,6 +33,9 @@
             <part mimeType="image/jpg" fileName="stl.jpg">
                 <fileContent path="/WEB-INF/resources/testEmail/stl.jpg"/>
             </part>
+            <part mimeType="text/xml" fileName="testxslout.xml">
+                <xslResultContent path="xsltest.xsl"/>
+            </part>
         </multipart>
 
     <!-- more email elements may be added to send more than one message per request -->
