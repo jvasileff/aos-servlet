@@ -14,6 +14,8 @@ public class Util {
         // only static methods.
     }
 
+    /*
+    // Commenting out - why not let javax.mail tell us about invalid emails
     public static final boolean isValidEmailFormat(String addr) throws ServletException  {
         try {
             RE re = new RE("^[\\w\\-\\.]+\\@([\\w\\-]+\\.)+[A-z]{2,3}$");
@@ -22,6 +24,7 @@ public class Util {
             throw new ServletException(e);
         }
     }
+    */
 
     public static Element getFirstElement(Element el, String name) {
         NodeList nl = el.getElementsByTagName(name);

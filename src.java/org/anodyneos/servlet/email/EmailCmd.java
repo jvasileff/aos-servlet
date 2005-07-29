@@ -234,9 +234,11 @@ public class EmailCmd implements Command {
             java.io.UnsupportedEncodingException{
 
         String address = params.parse(el.getAttribute("address"));
+        /*
         if (! Util.isValidEmailFormat(address)) {
             address = "";
         }
+        */
         String name = params.parse(el.getAttribute("name"));
         return new InternetAddress(address, name);
     }
