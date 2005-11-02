@@ -4,6 +4,8 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -14,47 +16,43 @@ import org.xml.sax.SAXParseException;
  */
 public class GenericErrorHandler implements ErrorHandler, ErrorListener {
 
+    private static final Log log = LogFactory.getLog(GenericErrorHandler.class);
+
     public GenericErrorHandler() {}
 
     public void warning(SAXParseException exception) throws SAXException {
-        System.err.println(
+        log.warn(
             "[SAX Warning] " +
             getLocationString(exception) + ": " + exception.getMessage());
     }
 
     public void error(SAXParseException exception) throws SAXException {
-        System.err.println(
+        log.error(
             "[SAX Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
     }
 
     public void fatalError(SAXParseException exception) throws SAXException {
-        System.err.println(
+        log.error(
             "[SAX Fatal Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
         throw exception;
     }
 
     public void warning(TransformerException exception) throws TransformerException {
-        System.err.println(
+        log.warn(
             "[Transformer Warning] " +
             getLocationString(exception) + ": " + exception.getMessage());
     }
 
     public void error(TransformerException exception) throws TransformerException {
-        System.err.println(
+        log.error(
             "[Transformer Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
-        //System.out.println("STACK_TRACE=====");
-        //exception.printStackTrace();
-        //System.out.println("=====");
-        //TransformerException e = new TransformerException("My exception!");
-        //e.printStackTrace();
-        //throw e;
     }
 
     public void fatalError(TransformerException exception) throws TransformerException {
-        System.err.println(
+        log.error(
             "[Transformer Fatal Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
         throw exception;

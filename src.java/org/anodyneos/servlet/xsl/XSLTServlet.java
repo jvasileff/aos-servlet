@@ -148,6 +148,9 @@ public class XSLTServlet extends HttpServlet {
 
         // Setup templatesCache
         templatesCache = new TemplatesCache(resolver);
+        GenericErrorHandler eh = new GenericErrorHandler();
+        templatesCache.setErrorHandler(eh);
+        templatesCache.setErrorListener(eh);
         if (IP_FALSE.equals(servletConfig.getInitParameter(IP_TEMPLATE_CACHE))) {
             templatesCache.setCacheEnabled(false);
         } else {
@@ -377,7 +380,6 @@ public class XSLTServlet extends HttpServlet {
         Transformer transformer = templatesCache.getTransformer();
         transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setURIResolver(resolver);
         transformer.transform(new DOMSource(doc, "webapp://" + req.getServletPath()),
                 new StreamResult(out));
         out.close();
@@ -449,7 +451,6 @@ public class XSLTServlet extends HttpServlet {
             res.setContentType(contentType);
         }
         PrintWriter out = res.getWriter();
-        transformer.setURIResolver(resolver);
         String output = transformer.getOutputProperty(OutputKeys.METHOD);
 
         if (!doOutputValidation || !"xml".equalsIgnoreCase(output)) {
