@@ -1,9 +1,5 @@
 package org.anodyneos.servlet.email;
 
-import javax.servlet.ServletException;
-
-import org.apache.regexp.RE;
-import org.apache.regexp.RESyntaxException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;

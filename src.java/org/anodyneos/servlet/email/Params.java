@@ -41,6 +41,8 @@ public class Params {
     private javax.xml.parsers.DocumentBuilder docBuilder;
     private Map reqAsMap;
 
+    public static final char CSV_LS = '\n';
+
     /**
      *  <code>types</code> holds custom parameter types and values.  The key is
      *  a string for the type, the value is a java.util.Map holding all
@@ -426,18 +428,72 @@ public class Params {
 
         protected String process(String str) {
             if (args.contains("url")) {
-                // TODO: when JDK1.3 support is dropped, toggle comments for the lines below
-                //try {
-                    //str = java.net.URLEncoder.encode(str, "UTF-8");
-                    str = java.net.URLEncoder.encode(str);
-                //} catch (UnsupportedEncodingException e) {
+                try {
+                    str = java.net.URLEncoder.encode(str, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
                     // this should not happen
-                    //throw new Error(e.getMessage());
-                //}
+                    throw new Error(e.getMessage());
+                }
             } else if (args.contains("html")) {
                 str = htmlEncode(str);
+            } else if (args.contains("csv")) {
+                str = csvEncode(str);
             }
             return str;
+        }
+    }
+
+    public static String csvEncode(String str) {
+        if (-1 == str.indexOf('"') &&
+                -1 == str.indexOf(',') &&
+                -1 == str.indexOf('\r') &&
+                -1 == str.indexOf('\n')) {
+                // If no quotes, cr, lf, or comma, don't escape:
+                return str;
+        } else {
+            StringBuffer out = new StringBuffer();
+            char[] cbuf = str.toCharArray();
+
+            out.append('"');
+            boolean lwnl = false;
+            /*  find '\r' || '"'
+                    output preceding chars
+                    output '', '\n', or two '"' chars
+                    reset cpOff;
+            */
+            int off = 0;
+            int len = cbuf.length;
+            int cpOff = off;
+            for (int i = off; i < cbuf.length && i < off+len; i++) {
+                char ch = cbuf[i];
+                if (ch == '\r' || ch == '"') {
+                    // output preceeding chars (if any)
+                    int cpLen = i - cpOff;
+                    if (cpLen > 0) {
+                        out.append(cbuf, cpOff, cpLen);
+                    }
+                    // output for this char (if nec)
+                    if (ch == '"') {
+                        out.append("\"\"");
+                    } else if (! lwnl) {
+                        out.append(CSV_LS);
+                    }
+                    // don't include this char on next copy
+                    cpOff = i+1;
+                    lwnl = false;
+                } else if (ch == '\n') {
+                    lwnl = true;
+                } else {
+                    lwnl = false;
+                }
+            }
+            // output rest of chars (if any)
+            int cpLen = len + off - cpOff;
+            if (cpLen > 0) {
+                out.append(cbuf, cpOff, cpLen);
+            }
+            out.append('"');
+            return out.toString();
         }
     }
 

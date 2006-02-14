@@ -115,11 +115,23 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
 
         // Read configuration and setup context object
         try {
-            params = new Params(this, req);
             //configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
             configURI = new URI("webapp://" + req.getServletPath());
             configDoc = getDocumentBuilder().parse(
                     resolver.resolveEntity("", configURI.toString()));
+
+            // allow the config file to specify request encoding prior to parsing get/post
+            try {
+                String forceRequestEncoding =
+                    configDoc.getDocumentElement().getAttribute("forceRequestCharset");
+                if(null != forceRequestEncoding && ! ("".equals(forceRequestEncoding))) {
+                    req.setCharacterEncoding(forceRequestEncoding);
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+
+            params = new Params(this, req);
             ctx = new EmailContext(templatesCache, resolver, params,
                     configURI, configDoc);
         } catch (SAXException e) {
