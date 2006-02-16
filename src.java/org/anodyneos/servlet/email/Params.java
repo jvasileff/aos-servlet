@@ -436,6 +436,8 @@ public class Params {
                 }
             } else if (args.contains("html")) {
                 str = htmlEncode(str);
+            } else if (args.contains("htmlDouble")) {
+                str = htmlDoubleEncode(str);
             } else if (args.contains("csv")) {
                 str = csvEncode(str);
             }
@@ -517,6 +519,29 @@ public class Params {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * This is a limited use function to convert non-ascii characters to their &#9999; equivelents, and to further
+     * escape the ampersand such that the final result is "&amp;#9999;".
+     *
+     * @param str
+     * @return
+     */
+    public static String htmlDoubleEncode(String str) {
+        StringBuffer sb = new StringBuffer(str.length());
+        for(int i=0; i < str.length(); i++) {
+            char aChar = str.charAt(i);
+            if ((aChar < 0x0020) || (aChar > 0x007e)) {
+                sb.append('&');
+                sb.append('#');
+                sb.append((int)aChar);
+                sb.append(';');
+            } else {
+                sb.append(aChar);
+            }
+        }
+        return htmlEncode(sb.toString());
     }
 
 }
