@@ -3,6 +3,7 @@ package org.anodyneos.servlet.email;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -45,6 +46,7 @@ public class EmailCmd implements Command {
         List to = new ArrayList();
         List cc = new ArrayList();
         List bcc = new ArrayList();
+        List header = new ArrayList();
         List from = new ArrayList();
 
         // create some properties and get the default Session
@@ -68,6 +70,8 @@ public class EmailCmd implements Command {
                     cc.add(getAddress(el, ctx.getParams()));
                 } else if ("bcc".equals(el.getNodeName())) {
                     bcc.add(getAddress(el, ctx.getParams()));
+                } else if ("header".equals(el.getNodeName())) {
+                    header.add(getHeader(el, ctx.getParams()));
                 } else if ("from".equals(el.getNodeName())) {
                     from.add(getAddress(el, ctx.getParams()));
                 } else if ("subject".equals(el.getNodeName())) {
@@ -79,6 +83,12 @@ public class EmailCmd implements Command {
                 }
             }
 
+        }
+        if (header.size() > 0) {
+            for (Iterator it = header.iterator(); it.hasNext();) {
+                String[] sa = (String[]) it.next();
+                message.addHeader(sa[0], sa[1]);
+            }
         }
         if (to.size() > 0) {
             message.setRecipients(Message.RecipientType.TO, (InternetAddress[])to.toArray(new InternetAddress[to.size()]));
@@ -231,7 +241,7 @@ public class EmailCmd implements Command {
     }
 
     protected Address getAddress(Element el, Params params) throws ServletException,
-            java.io.UnsupportedEncodingException{
+            java.io.UnsupportedEncodingException {
 
         String address = params.parse(el.getAttribute("address"));
         /*
@@ -241,6 +251,13 @@ public class EmailCmd implements Command {
         */
         String name = params.parse(el.getAttribute("name"));
         return new InternetAddress(address, name);
+    }
+
+    protected String[] getHeader(Element el, Params params) throws ServletException {
+        String[] header = new String[2];
+        header[0] = el.getAttribute("name");
+        header[1] = params.parse(el.getAttribute("value"));
+        return header;
     }
 
 }

@@ -2,6 +2,11 @@
 <config successRedirect="testEmailSuccess.html" failureRedirect="testEmailFailure.html">
 
     <email>
+        <header name="X-Priority" value="1 (Highest)"/>
+        <header name="X-MSMail-Priority" value="High"/>
+        <header name="Importance" value="High"/>
+        <header name="Disposition-Notification-To" value="{reqParam::fromAddr}"/>
+
         <from name="{reqParam::fromName}" address="{reqParam::fromAddr}"/>
         <to name="{reqParam::toName}" address="{reqParam::toAddr}"/>
         <subject>[test email] {reqParam::subject}</subject>
