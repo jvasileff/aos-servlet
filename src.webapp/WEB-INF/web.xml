@@ -25,6 +25,13 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
+    <!-- Echo AJAX Servlet -->
+    <servlet>
+        <servlet-name>EchoAJAXServlet</servlet-name>
+        <servlet-class>org.anodyneos.servlet.EchoAJAXServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <!-- Email Servlet -->
     <servlet>
         <servlet-name>EmailServlet</servlet-name>
@@ -106,8 +113,23 @@
     </servlet-mapping>
 
     <servlet-mapping>
+        <servlet-name>EchoAJAXServlet</servlet-name>
+        <url-pattern>/echoAJAX</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>EmailServlet</servlet-name>
         <url-pattern>*.xeml</url-pattern>
     </servlet-mapping>
+
+    <mime-mapping>
+        <extension>xhtml</extension>
+        <mime-type>application/xhtml+xml</mime-type>
+    </mime-mapping>
+
+    <mime-mapping>
+        <extension>test</extension>
+        <mime-type>application/xhtml+xml</mime-type>
+    </mime-mapping>
 
 </web-app>

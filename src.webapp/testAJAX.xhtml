@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+    <head>
+    </head>
+
+    <body>
+        <form name="f1" action="echoAJAX" method="post">
+            <textarea name="ta1" rows="10" cols="80">&lt;span xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;!--~~~~~~~~~~ PLACE CONTENT BELOW ~~~~~~~~~~--&gt;
+
+&lt;p&gt;&lt;b&gt;SOME CONTENT&lt;/b&gt;&lt;/p&gt;
+
+&lt;!--~~~~~~~~~~~~~~~ END CONTENT ~~~~~~~~~~~~~--&gt;
+&lt;/span&gt;
+</textarea><br />
+            Request Encoding:<select name="reqEnc">
+                <option>UTF8</option>
+                <option>ISO-8859-1</option>
+                <option>WINDOWS-1252</option>
+                <option>INDUCE-ERROR</option>
+            </select><br />
+            Response Encoding:<select name="resEnc">
+                <option>UTF8</option>
+                <option>ISO-8859-1</option>
+                <option>WINDOWS-1252</option>
+                <option>INDUCE-ERROR</option>
+            </select><br />
+            Response Mime-Type:<select name="resMime">
+                <option>text/xml</option>
+                <option>application/xml</option>
+                <option>application/xhtml+xml</option>
+                <option>text/html</option>
+                <option>text/plain</option>
+            </select><br />
+            <a onclick="doit(); return false;" href="#">doit</a>
+            <br />
+            <textarea name="ta2" rows="10" cols="80"></textarea>
+        </form>
+        <script lang="javascript">
+            function doit() {
+                if (window.XMLHttpRequest) {
+                    requestObject = new XMLHttpRequest();
+                } else if (window.ActiveXObject) {
+                    requestObject = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                
+                submitURL = "echoAJAX?";
+                submitURL += "reqEnc=" + document.forms.f1.reqEnc.value;
+                submitURL += "&amp;resEnc=" + document.forms.f1.resEnc.value;
+                submitURL += "&amp;resMime=" + document.forms.f1.resMime.value;
+                requestObject.open("POST", submitURL, false);
+                requestObject.send(document.forms.f1.ta1.value);
+                document.forms.f1.ta2.value = requestObject.responseText;
+
+                ///////////////// test parsing text
+                //var parser = new DOMParser();
+                //var dom = parser.parseFromString(requestObject.responseText, "text/xml");
+
+                var node = document.getElementById("div1");
+                removeChildren(node);
+                importData(requestObject, node);
+            }
+            function importData(req,node) {
+                var data = req.responseXML.firstChild;
+
+
+                node.appendChild(data.cloneNode(true));
+                //document.getElementById(id).innerHTML = document.getElementById(id).innerHTML;
+                
+
+                // http://www.thescripts.com/forum/thread167679.html
+                //var clonedData = document.importNode(data, true);
+                //document.getElementById(id).appendChild(clonedData);
+            }
+
+            function removeChildren(node) {
+                var children = node.childNodes;
+                for(i = 0; i &lt; children.length; i++) {
+                    child = children.item(i);//
+                    node.removeChild(child); 
+                }
+            }
+        </script>
+        <hr />
+        <div id="div1"></div>
+        <hr />
+    </body>
+</html>

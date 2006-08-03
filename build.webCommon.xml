@@ -42,6 +42,7 @@
         <include name="**/*.xeml"/>
         <include name="**/*.gif"/>
         <include name="**/*.htm"/>
+        <include name="**/*.xhtml"/>
         <include name="**/*.html"/>
         <include name="**/*.jpg"/>
         <include name="**/*.js"/>
