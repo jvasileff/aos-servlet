@@ -1,0 +1,200 @@
+<html>
+
+    <head>
+    </head>
+
+    <body>
+        <form name="f1" id="f1" action="echoAJAX" method="post">
+            <textarea name="ta1" rows="10" cols="80">&lt;span xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;!--~~~~~~~~~~ PLACE CONTENT BELOW ~~~~~~~~~~--&gt;
+&lt;p&gt;&lt;b&gt;
+SOME CONTENT
+&lt;/b&gt;&lt;/p&gt;
+&lt;!--~~~~~~~~~~~~~~~ END CONTENT ~~~~~~~~~~~~~--&gt;
+&lt;/span&gt;
+</textarea><br />
+            <table>
+                <tr>
+                    <td>Request Encoding:</td>
+                    <td>
+                        <select name="reqEnc" id="reqEnc">
+                            <option value="UTF-8">UTF-8</option>
+                            <option value="ISO-8859-1">ISO-8859-1</option>
+                            <option value="WINDOWS-1252">WINDOWS-1252</option>
+                            <option value="INDUCE-ERROR">INDUCE-ERROR</option>
+                        </select>
+                    </td>
+                </tr><tr>
+                    <td>Response Encoding:</td>
+                    <td>
+                        <select name="resEnc" id="resEnc">
+                            <option value="UTF-8">UTF-8</option>
+                            <option value="ISO-8859-1">ISO-8859-1</option>
+                            <option value="WINDOWS-1252">WINDOWS-1252</option>
+                            <option value="INDUCE-ERROR">INDUCE-ERROR</option>
+                        </select>
+                    </td>
+                </tr><tr>
+                    <td>Response Mime-Type:</td>
+                    <td>
+                        <select name="resMime" id="resMime">
+                            <option value="text/xml">text/xml</option>
+                            <option value="application/xml">application/xml</option>
+                            <option value="application/xhtml+xml">application/xhtml+xml</option>
+                            <option value="text/html">text/html</option>
+                            <option value="text/plain">text/plain</option>
+                        </select>
+                    </td>
+                </tr><tr>
+                    <td>Parse response as XML</td>
+                    <td><input type="checkbox" name="doXml" /></td>
+                </tr>
+            </table>
+            <a onclick="doit(); return false;" href="#">doit</a>
+            <br />
+            <textarea name="ta2" rows="10" cols="80"></textarea>
+        </form>
+        <script lang="javascript">
+            var gx_isWin32;
+            var gx_isMacPPC;
+            gx_isWin32 = (navigator.platform == "Win32") ? true : false;
+            gx_isMacPPC = (navigator.platform == "MacPPC") ? true : false;
+
+            var gx_isNav;
+            var gx_isIE;
+            var gx_isSafari;
+
+            gx_isNav = (navigator.appName == "Netscape") ? true : false;
+            gx_isIE = (navigator.appName == "Microsoft Internet Explorer") ? true : false;
+            gx_isSafari = (navigator.vendor == "Apple Computer, Inc.") ? true : false;
+
+            function doit() {
+                if (window.XMLHttpRequest) {
+                    requestObject = new XMLHttpRequest();
+                } else if (window.ActiveXObject) {
+                    requestObject = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+
+                submitURL = "echoAJAX?";
+                submitURL += "reqEnc=" + document.forms.f1.reqEnc.value;
+                submitURL += "&resEnc=" + document.forms.f1.resEnc.value;
+                submitURL += "&resMime=" + document.forms.f1.resMime.value;
+                requestObject.open("POST", submitURL, false);
+                requestObject.send(document.forms.f1.ta1.value);
+                document.forms.f1.ta2.value = requestObject.responseText;
+
+                ///////////////// test parsing text
+                //var parser = new DOMParser();
+                //var dom = parser.parseFromString(requestObject.responseText, "text/xml");
+
+                var node = document.getElementById("span1");
+                removeChildren(node);
+
+                if (document.forms.f1.doXml.checked) {
+                    importRequestDataXML(requestObject, node);
+                } else {
+                    importRequestDataText(requestObject, node);
+                }
+            }
+
+            function importRequestDataXML(req,node) {
+                // http://www.thescripts.com/forum/thread167679.html
+                if (gx_isNav || gx_isSafari) {
+                    // for Mozilla:
+                    var data = req.responseXML.firstChild;
+                    node.appendChild(data.cloneNode(true));
+                    document.getElementById(id).innerHTML = document.getElementById(id).innerHTML;
+                } else {
+                    // for IE
+                    node.innerHTML = tapestry_html.getContentAsString(req.responseXML.firstChild);
+                }
+            }
+
+            function importRequestDataText(req,node) {
+                node.innerHTML = req.responseText;
+            }
+
+            function removeChildren(node) {
+                while (node.firstChild) {
+                      node.removeChild(node.firstChild);
+                }
+            }
+
+            // from http://svn.apache.org/viewvc/tapestry/tapestry4/trunk/tapestry-framework/src/js/tapestry/html.js?view=markup
+            //tapestry.html={
+            tapestry_html={
+
+                getContentAsString:function(node){
+                    if (typeof node.xml != "undefined")
+                        return this.getContentAsStringIE(node);
+                    else if (typeof XMLSerializer != "undefined" )
+                        return this.getContentAsStringMozilla(node);
+                    else
+                        return this.getContentAsStringGeneric(node);
+                },
+
+                getContentAsStringIE:function(node){
+                    var s="";
+                    for (var i = 0; i < node.childNodes.length; i++)
+                        s += node.childNodes[i].xml;
+                    return s;
+                },
+
+                getContentAsStringMozilla:function(node){
+                    var xmlSerializer = new XMLSerializer();
+                    var s = "";
+                    for (var i = 0; i < node.childNodes.length; i++) {
+                        s += xmlSerializer.serializeToString(node.childNodes[i]);
+                        if (s == "undefined")
+                            return this.getContentAsStringGeneric(node);
+                    }
+                    return s;
+                },
+
+                getContentAsStringGeneric:function(node){
+                    var s="";
+                    if (node == null) { return s; }
+                    for (var i = 0; i < node.childNodes.length; i++) {
+                        switch (node.childNodes[i].nodeType) {
+                            case 1: // ELEMENT_NODE
+                            case 5: // ENTITY_REFERENCE_NODE
+                                s += this.getElementAsStringGeneric(node.childNodes[i]);
+                                break;
+                            case 3: // TEXT_NODE
+                            case 2: // ATTRIBUTE_NODE
+                            case 4: // CDATA_SECTION_NODE
+                                s += node.childNodes[i].nodeValue;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    return s;
+                },
+
+                getElementAsStringGeneric:function(node){
+                    if (!node) { return ""; }
+
+                    var s='<' + node.nodeName;
+                    // add attributes
+                    if (node.attributes && node.attributes.length > 0) {
+                        for (var i=0; i < node.attributes.length; i++) {
+                            s += " " + node.attributes[i].name + "=\"" + node.attributes[i].value + "\"";
+                        }
+                    }
+                    // close start tag
+                    s += '>';
+                    // content of tag
+                    s += this.getContentAsStringGeneric(node);
+                    // end tag
+                    s += '</' + node.nodeName + '>';
+                    return s;
+                }
+            }
+
+        </script>
+        <hr />
+        <span id="span1"></span>
+        <hr />
+    </body>
+</html>
