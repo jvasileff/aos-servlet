@@ -10,3 +10,10 @@ Contents:
     src.java/               Java source code for this release
     src.lib/                Third party libraries
 
+Borrowed Code:
+
+    From www.springframework.org under Apache 2.0 license:
+        org.anodyneos.servlet.multipart.AbstractMultipartHttpServletRequest
+        org.anodyneos.servlet.multipart.DefaultMultipartHttpServletRequest
+        org.anodyneos.servlet.multipart.MultipartFile
+        org.anodyneos.servlet.multipart.MultipartHttpServletRequest

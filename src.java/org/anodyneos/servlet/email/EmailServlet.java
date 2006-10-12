@@ -16,8 +16,14 @@ import org.anodyneos.commons.net.ClassLoaderURIHandler;
 import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
+import org.anodyneos.servlet.multipart.MaxUploadSizeExceededException;
+import org.anodyneos.servlet.multipart.MultipartException;
+import org.anodyneos.servlet.multipart.commons.CommonsMultipartResolver;
+import org.anodyneos.servlet.multipart.support.MultipartHttpServletRequest;
 import org.anodyneos.servlet.net.ServletContextURIHandler;
 import org.anodyneos.servlet.xsl.GenericErrorHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,6 +31,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class EmailServlet extends javax.servlet.http.HttpServlet {
+
+    protected static final Log logger = LogFactory.getLog(EmailServlet.class);
 
     private static final long serialVersionUID = 3544676161419817017L;
 
@@ -113,91 +121,117 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         Document configDoc;
         EmailContext ctx;
 
-        // Read configuration and setup context object
-        try {
-            //configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
-            configURI = new URI("webapp://" + req.getServletPath());
-            configDoc = getDocumentBuilder().parse(
-                    resolver.resolveEntity("", configURI.toString()));
+        CommonsMultipartResolver multipartResolver = null;
 
-            // allow the config file to specify request encoding prior to parsing get/post
+        // outer try block to make sure we cleanup uploaded files
+        try {
+            // Read configuration and setup context object
             try {
-                String forceRequestEncoding =
-                    configDoc.getDocumentElement().getAttribute("forceRequestCharset");
-                if(null != forceRequestEncoding && ! ("".equals(forceRequestEncoding))) {
-                    req.setCharacterEncoding(forceRequestEncoding);
+                //configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
+                configURI = new URI("webapp://" + req.getServletPath());
+                configDoc = getDocumentBuilder().parse(
+                        resolver.resolveEntity("", configURI.toString()));
+
+                // allow the config file to specify request encoding prior to parsing get/post
+                String forceRequestEncoding = null;
+                try {
+                    forceRequestEncoding =
+                        configDoc.getDocumentElement().getAttribute("forceRequestCharset");
+                    if(null != forceRequestEncoding && ! ("".equals(forceRequestEncoding))) {
+                        req.setCharacterEncoding(forceRequestEncoding);
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (SAXException e) {
+                throw new ServletException("Cannot parse config xml.", e);
+            } catch (ParserConfigurationException e) {
+                throw new ServletException("Cannot create DocumentBuilder.", e);
+            }
+
+            try {
+                // TODO only enable multipart if allowed by both xeml and web.xml
+                // TODO only enable when request is multipart post
+                // TODO size limits for multipart should be configurable by xeml and web.xml
+                // TODO configurable temp directory
+                multipartResolver = new CommonsMultipartResolver(getServletContext());
+                if (multipartResolver.isMultipart(req)) {
+                    multipartResolver.setMaxInMemorySize(10240); // 10KB
+                    multipartResolver.setMaxUploadSize(1024*1024*5); // 5MB
+                    req = multipartResolver.resolveMultipart(req);
+                }
+            } catch (MaxUploadSizeExceededException e) {
+                // TODO
+                throw e;
+            } catch (MultipartException e) {
+                // TODO
+                throw e;
             }
 
             params = new Params(this, req);
-            ctx = new EmailContext(templatesCache, resolver, params,
-                    configURI, configDoc);
-        } catch (SAXException e) {
-            throw new ServletException("Cannot parse config xml.", e);
-        } catch (ParserConfigurationException e) {
-            throw new ServletException("Cannot create DocumentBuilder.", e);
-        }
+            ctx = new EmailContext(templatesCache, resolver, params,  configURI, configDoc);
 
-        try {
-            String redir = processDoc(ctx);
-            if (redir != null) {
-                res.sendRedirect(redir);
-            } else {
-                /* This stuff should be put into a debugging operation */
-                /*
-                params.addScopeElements(configDoc.getDocumentElement());
-
-                String rawXMLMimeType = "text/xml";
-                if ( "xml".equals(req.getParameter("rawXMLMime"))) {
-                    rawXMLMimeType = "text/xml";
-                } else if ( "plain".equals(req.getParameter("rawXMLMime"))) {
-                    rawXMLMimeType = "text/plain";
-                }
-                res.setContentType(rawXMLMimeType);
-                PrintWriter out = res.getWriter();
-                Transformer transformer = templatesCache.getTransformer();
-                transformer.setURIResolver(resolver);
-                transformer.transform(new DOMSource(configDoc, "webapp://" + req.getServletPath()),
-                                new StreamResult(out));
-                out.close();
-                */
-
-                res.setContentType("text/html");
-                PrintWriter out = res.getWriter();
-                out.println("<html><body>");
-                out.println("<center><h1>The email has been sent.</h1></center>");
-                out.println("</body></html>");
-            }
-        } catch (Exception e) {
-            log("Error sending email", e);
-            String failureRedirect = null;
             try {
-                failureRedirect =
-                    configDoc.getDocumentElement().getAttribute("failureRedirect");
-            } catch (Throwable t) {
-                // noop
-            }
-            if (!res.isCommitted()) {
-                res.reset();
-                if (null != failureRedirect) {
-                    res.sendRedirect(failureRedirect);
+                String redir = processDoc(ctx);
+                if (redir != null) {
+                    res.sendRedirect(redir);
                 } else {
+                    /* This stuff should be put into a debugging operation */
+                    /*
+                     * params.addScopeElements(configDoc.getDocumentElement());
+                     *
+                     * String rawXMLMimeType = "text/xml"; if (
+                     * "xml".equals(req.getParameter("rawXMLMime"))) {
+                     * rawXMLMimeType = "text/xml"; } else if (
+                     * "plain".equals(req.getParameter("rawXMLMime"))) {
+                     * rawXMLMimeType = "text/plain"; }
+                     * res.setContentType(rawXMLMimeType); PrintWriter out =
+                     * res.getWriter(); Transformer transformer =
+                     * templatesCache.getTransformer();
+                     * transformer.setURIResolver(resolver);
+                     * transformer.transform(new DOMSource(configDoc, "webapp://" +
+                     * req.getServletPath()), new StreamResult(out)); out.close();
+                     */
+
                     res.setContentType("text/html");
-                    printErrorMessage(res.getWriter(), e);
+                    PrintWriter out = res.getWriter();
+                    out.println("<html><body>");
+                    out.println("<center><h1>The email has been sent.</h1></center>");
+                    out.println("</body></html>");
                 }
+            } catch (Exception e) {
+                log("Error sending email", e);
+                String failureRedirect = null;
+                try {
+                    failureRedirect =
+                        configDoc.getDocumentElement().getAttribute("failureRedirect");
+                } catch (Throwable t) {
+                    // noop
+                }
+                if (!res.isCommitted()) {
+                    res.reset();
+                    if (null != failureRedirect) {
+                        res.sendRedirect(failureRedirect);
+                    } else {
+                        res.setContentType("text/html");
+                        printErrorMessage(res.getWriter(), e);
+                    }
+                }
+                printErrorMessage(res.getWriter(), e);
+                java.io.PrintWriter eout = res.getWriter();
+                eout.println("<h1>Exception Thrown</h1>");
+                eout.println("<p>");
+                eout.println(e.toString());
+                eout.println("<p>");
+                eout.println("<h1>Stack Trace</h1>");
+                eout.println("\n<pre>");
+                e.printStackTrace(eout);
+                eout.println("</pre>");
             }
-            printErrorMessage(res.getWriter(), e);
-            java.io.PrintWriter eout = res.getWriter();
-            eout.println("<h1>Exception Thrown</h1>");
-            eout.println("<p>");
-            eout.println(e.toString());
-            eout.println("<p>");
-            eout.println("<h1>Stack Trace</h1>");
-            eout.println("\n<pre>");
-            e.printStackTrace(eout);
-            eout.println("</pre>");
+        } finally {
+            if (null != multipartResolver && req instanceof MultipartHttpServletRequest) {
+                multipartResolver.cleanupMultipart((MultipartHttpServletRequest) req);
+            }
         }
 
     }
@@ -245,6 +279,13 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
         eout.println("\n<pre>");
         e.printStackTrace(eout);
         eout.println("</pre>");
+    }
+
+    private static String[] addStringToArray(String[] arr, String str) {
+        String[] newArr = new String[arr.length + 1];
+        System.arraycopy(arr, 0, newArr, 0, arr.length);
+        newArr[arr.length] = str;
+        return newArr;
     }
 
 }

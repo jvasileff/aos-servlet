@@ -1,5 +1,6 @@
 package org.anodyneos.servlet.email;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.activation.DataHandler;
+import javax.activation.DataSource;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -21,6 +23,7 @@ import javax.mail.internet.MimePart;
 import javax.servlet.ServletException;
 
 import org.anodyneos.commons.net.URI;
+import org.anodyneos.servlet.multipart.MultipartFile;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -109,7 +112,7 @@ public class EmailCmd implements Command {
     }
 
     protected void processPart(EmailContext ctx, MimePart part, Element el)
-    throws MessagingException, ServletException, URI.MalformedURIException {
+    throws MessagingException, ServletException, URI.MalformedURIException, IOException {
         String mimeType = el.getAttribute("mimeType").trim();
         String fileName = el.getAttribute("fileName").trim();
 
@@ -118,6 +121,7 @@ public class EmailCmd implements Command {
         Element fileContent = Util.findChildElement(el, "fileContent");
         Element substResultContent = Util.findChildElement(el, "substResultContent");
         Element xslResultContent = Util.findChildElement(el, "xslResultContent");
+        Element reqFileContent = Util.findChildElement(el, "requestFileContent");
         if (content != null) {
             String charset = content.getAttribute("charset").trim();
             StringDataSource ds = new StringDataSource(ctx.getParams().parse(Util.getText(content)));
@@ -190,6 +194,17 @@ public class EmailCmd implements Command {
                 part.setFileName(fileName);
             }
             part.setDataHandler(new DataHandler(ds));
+        } else if (reqFileContent != null) {
+            // TODO - allow optional part - only add if file was uploaded
+            // TODO - full support for specifying filename, mime, etc.
+            // TODO - support for adding variable # of parts based on file uploads provided?
+            // TODO - make sure file was actually uploaded, not just that the form had an upload control
+            MultipartFile mf = ctx.getParams().getRequestFile("myFile");
+            if (null != mf) {
+                MultipartFileDataSource ds = new MultipartFileDataSource(mf);
+                part.setFileName(ds.getName());
+                part.setDataHandler(new DataHandler(ds));
+            }
         } else if (xslResultContent != null) {
             String charset = xslResultContent.getAttribute("charset").trim();
             String path = xslResultContent.getAttribute("path").trim();
@@ -214,7 +229,7 @@ public class EmailCmd implements Command {
      *  <code>MimeMultipart</code> content.
      */
     protected void processMultipart(EmailContext ctx, MimePart part, Element multipartEl)
-    throws MessagingException, ServletException, URI.MalformedURIException {
+    throws MessagingException, ServletException, URI.MalformedURIException, IOException {
         MimeMultipart multipart = new MimeMultipart();
         String subType = multipartEl.getAttribute("subType").trim();
         if (subType.length() > 0) {

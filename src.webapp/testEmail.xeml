@@ -41,6 +41,9 @@
             <part mimeType="text/xml" fileName="testxslout.xml">
                 <xslResultContent path="xsltest.xsl"/>
             </part>
+            <part fileName="myFile.txt">
+                <requestFileContent name="myFile"/>
+            </part>
         </multipart>
 
     <!-- more email elements may be added to send more than one message per request -->

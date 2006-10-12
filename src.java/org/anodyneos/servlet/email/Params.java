@@ -17,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +30,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.anodyneos.servlet.multipart.MultipartFile;
+import org.anodyneos.servlet.multipart.support.MultipartHttpServletRequest;
 import org.anodyneos.servlet.util.HttpServletRequestAsMap;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -40,6 +43,7 @@ public class Params {
     private HttpServletRequest req;
     private javax.xml.parsers.DocumentBuilder docBuilder;
     private Map reqAsMap;
+    private MultipartHttpServletRequest multipartReq;
 
     public static final char CSV_LS = '\n';
 
@@ -50,6 +54,7 @@ public class Params {
      */
     private TreeMap types = new TreeMap();
 
+    public static final String REQUEST_FILE = "reqFile";
     public static final String REQUEST_PARAM = "reqParam";
     public static final String REQUEST_HEADER = "reqHeader";
     public static final String REQUEST_ATTR = "reqAttr";
@@ -58,6 +63,10 @@ public class Params {
     public static final String CONTEXT_ATTR = "ctxAttr";
     public static final String CONTEXT_PARAM = "ctxParam";
     public static final String CGI = "CGI";
+
+    public static final String FILE_CONTENT_TYPE = "contentType";
+    public static final String FILE_SIZE = "size";
+    public static final String FILE_ORIGINAL_FILENAME = "originalFilename";
 
     public static final char SEP_CHAR = ':';
     private static final String SEP_DOUBLE = "::";
@@ -70,7 +79,6 @@ public class Params {
         initType(REQUEST_PARAM);
         initType(REQUEST_HEADER);
         initType(REQUEST_ATTR);
-        initType(COOKIE);
         initType(SERVLET_PARAM);
         initType(CONTEXT_ATTR);
         initType(CONTEXT_PARAM);
@@ -79,13 +87,19 @@ public class Params {
         initType(CGI);
         reqAsMap = new HttpServletRequestAsMap(req);
 
-        // store cookies into types
+        // COOKIE - store cookies into types
         initType(COOKIE);
         Cookie[] cookies = req.getCookies();
         if (cookies != null) {
             for (int i = 0; i < cookies.length; i++) {
                 addParameter(COOKIE, cookies[i].getName(), cookies[i].getValue());
             }
+        }
+
+        // REQUEST_FILE - create reference if files are possible
+        initType(REQUEST_FILE);
+        if (req instanceof MultipartHttpServletRequest) {
+            this.multipartReq = (MultipartHttpServletRequest) req;
         }
     }
 
@@ -110,7 +124,24 @@ public class Params {
      *  <code>""</code> if the parameter does not exist.
      */
     public String getParameter(String type, String name) {
-        if (REQUEST_PARAM.equals(type)) {
+        if (REQUEST_FILE.equals(type)) {
+            if (null == multipartReq) {
+                return "";
+            } else {
+                String fileParamName = parseFileParamName(name);
+                String fileParamAttr = parseFileParamAttr(name);
+                MultipartFile mf = multipartReq.getFile(fileParamName);
+                if (null == mf) {
+                    return "";
+                } else if (FILE_CONTENT_TYPE.equals(fileParamAttr)) {
+                    return toStringValue(mf.getContentType());
+                } else if (FILE_ORIGINAL_FILENAME.equals(fileParamAttr)) {
+                    return toStringValue(mf.getOriginalFilename());
+                } else if (FILE_SIZE.equals(fileParamAttr)) {
+                    return Long.toString(mf.getSize());
+                }
+            }
+        } else if (REQUEST_PARAM.equals(type)) {
             return toStringValue(req.getParameter(name));
         } else if (REQUEST_HEADER.equals(type)) {
             return toStringValue(req.getHeader(name));
@@ -138,7 +169,14 @@ public class Params {
      *  an empty array if the parameter does not exist.
      */
     public String[] getParameterValues(String type, String name) {
-        if (REQUEST_PARAM.equals(type)) {
+        if (REQUEST_FILE.equals(type)) {
+            String val = getParameter(type, name);
+            if(null == val || "".equals(val)) {
+                return new String[] {};
+            } else {
+                return new String[] {val};
+            }
+        } else if (REQUEST_PARAM.equals(type)) {
             return toStringArray(req.getParameterValues(name));
         } else if (REQUEST_HEADER.equals(type)) {
             return toStringArray(req.getHeaders(name));
@@ -166,7 +204,20 @@ public class Params {
      *  <code>null</code> if the type does not exist.
      */
     public String[] getParameterNames(String type) {
-        if (REQUEST_PARAM.equals(type)) {
+        if (REQUEST_FILE.equals(type)) {
+            if (null == multipartReq) {
+                return new String[] {};
+            } else {
+                ArrayList list = new ArrayList();
+                for (Iterator it = multipartReq.getFileNames(); it.hasNext();) {
+                    String name = (String) it.next();
+                    list.add(name + "." + FILE_CONTENT_TYPE);
+                    list.add(name + "." + FILE_ORIGINAL_FILENAME);
+                    list.add(name + "." + FILE_SIZE);
+                }
+                return toStringArray(list);
+            }
+        } else if (REQUEST_PARAM.equals(type)) {
             return toStringArray(req.getParameterNames());
         } else if (REQUEST_HEADER.equals(type)) {
             return toStringArray(req.getHeaderNames());
@@ -187,6 +238,14 @@ public class Params {
         return new String[] {};
     }
 
+    public MultipartFile getRequestFile(String name) {
+        if (req instanceof MultipartHttpServletRequest) {
+            return ((MultipartHttpServletRequest)req).getFile(name);
+        } else {
+            return null;
+        }
+    }
+
     /**
      *  @return A String[] containing the name of all types.
      */
@@ -195,6 +254,14 @@ public class Params {
         return (String[]) keys.toArray(new String[keys.size()]);
     }
 
+    // note - this assumes list of Strings
+    protected String[] toStringArray(List list) {
+        if (list.size() == 0) {
+            return new String[] {};
+        } else {
+            return (String[]) list.toArray(new String[list.size()]);
+        }
+    }
 
     protected String[] toStringArray(Enumeration e) {
         List list = new ArrayList();
@@ -542,6 +609,28 @@ public class Params {
             }
         }
         return htmlEncode(sb.toString());
+    }
+
+    protected static String parseFileParamName(String str) {
+        if (null == str) {
+            return null;
+        }
+        int idx = str.lastIndexOf('.');
+        if (-1 == idx) {
+            return null;
+        }
+        return str.substring(0, idx);
+    }
+
+    protected static String parseFileParamAttr(String str) {
+        if (null == str) {
+            return null;
+        }
+        int idx = str.lastIndexOf('.');
+        if (-1 == idx) {
+            return null;
+        }
+        return str.substring(idx+1);
     }
 
 }
