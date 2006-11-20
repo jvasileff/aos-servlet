@@ -153,7 +153,7 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport {
      * @param servletContext the servlet context of the web application
      * @return the File representing the temporary directory
      */
-    public static File getTempDir(ServletContext servletContext) {
+    private static File getTempDir(ServletContext servletContext) {
             notNull(servletContext, "ServletContext must not be null");
             return (File) servletContext.getAttribute(TEMP_DIR_CONTEXT_ATTRIBUTE);
     }

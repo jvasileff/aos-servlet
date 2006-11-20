@@ -40,6 +40,16 @@
             <param-name>HostSMTP</param-name>
             <param-value>mail</param-value>
         </init-param>
+        <init-param>
+            <!-- 8MB max upload size-->
+            <param-name>maxUploadSizeBytes</param-name>
+            <param-value>8388608</param-value>
+        </init-param>
+        <init-param>
+            <!-- tmpDir is optional; if not set, servlet default is used -->
+            <param-name>tmpDir</param-name>
+            <param-value>/tmp</param-value>
+        </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
 

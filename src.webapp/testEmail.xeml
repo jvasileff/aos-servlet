@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<config successRedirect="testEmailSuccess.html" failureRedirect="testEmailFailure.html">
+<config successRedirect="testEmailSuccess.html" failureRedirect="testEmailFailure.html" maxUploadSize="5242880">
 
     <email>
         <header name="X-Priority" value="1 (Highest)"/>

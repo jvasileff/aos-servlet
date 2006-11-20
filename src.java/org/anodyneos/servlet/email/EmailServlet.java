@@ -1,5 +1,6 @@
 package org.anodyneos.servlet.email;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -16,8 +17,6 @@ import org.anodyneos.commons.net.ClassLoaderURIHandler;
 import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
-import org.anodyneos.servlet.multipart.MaxUploadSizeExceededException;
-import org.anodyneos.servlet.multipart.MultipartException;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 import org.anodyneos.servlet.multipart.commons.CommonsMultipartResolver;
 import org.anodyneos.servlet.net.ServletContextURIHandler;
@@ -36,29 +35,13 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
 
     private static final long serialVersionUID = 3544676161419817017L;
 
-    private static final String PARAM_OP = "aos.op";
-    private static final String PARAM_CONFIG_FILE = "aos.configFile";
-    private static final String PARAM_CONFIG_XSL = "aos.configXsl";
-
-    private static final String OP_ECHO_CONFIG = "echoConfig";
-    private static final String OP_ECHO_PARAMS = "echoParams";
-    private static final String OP_HELP = "help";
-    private static final String OP_XSL_CLEAR_CACHE = "clearCache";
-    private static final String OP_XSL_CACHE_SIZE = "cacheSize";
-    private static final String OP_XSL_DISABLE_CACHE = "disableCache";
-    private static final String OP_XSL_ENABLE_CACHE = "enableCache";
-
-    private static final String IP_TEMPLATE_RESOLVER = "template.resolver";
-    private static final String IP_TEMPLATE_EXTERNAL = "template.externalLookups";
     private static final String IP_TEMPLATE_CACHE = "template.cache";
-    private static final String IP_TRANSFORMER_RESOLVER = "transformer.resolver";
-    private static final String IP_TRANSFORMER_EXTERNAL = "transformer.externalLookups";
-    private static final String IP_PARSER_VALIDATION = "parser.validation";
-
-    private static final String IP_CONFIG_FILE_BASE_URI = "aos.configFileBaseURI";
-    private static final String IP_CLASS_LOADER = "aos.classLoader";
-    private static final String IP_SERVLET_CONTEXT = "aos.servletContext";
     private static final String IP_COMMAND_FACTORY = "aos.commandFactoryClass";
+
+    /** if maxUploadSizeBytes is not set or invalid, default is 0 bytes */
+    private static final String IP_MAX_UPLOAD = "maxUploadSizeBytes";
+
+    private static final String IP_TMP_DIR = "tmpDir";
 
     private static final String TRUE = "true";
     private static final String FALSE = "false";
@@ -66,6 +49,10 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
     private CommandFactory commandFactory;
     private UnifiedResolver resolver;
     private TemplatesCache templatesCache;
+
+    private long ctxMaxUpload = 0L;
+
+    private File tmpDir = null;
 
     /**
      * The attribute name in the &lt;?xml-stylesheet&gt; tag used in
@@ -104,6 +91,22 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
             templatesCache.setCacheEnabled(false);
         } else {
             templatesCache.setCacheEnabled(true);
+        }
+
+        // Setup ctxMaxUpload
+        try {
+            String maxUploadStr = servletConfig.getInitParameter(IP_MAX_UPLOAD);
+            if (null != maxUploadStr) {
+                ctxMaxUpload = Long.parseLong(maxUploadStr);
+            }
+        } catch(NumberFormatException e) {
+            // do nothing, stick with 0L.
+        }
+
+        // Setup tmp directory
+        String str =  servletConfig.getInitParameter(IP_TMP_DIR);
+        if (null != str && str.length() > 0) {
+            tmpDir = new File(str);
         }
 
     }
@@ -149,29 +152,33 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                 throw new ServletException("Cannot create DocumentBuilder.", e);
             }
 
+            // setup multipart parser if required
+            long maxUpload = 0;
+            if (ctxMaxUpload > 0) {
+                String maxUploadStr = configDoc.getDocumentElement().getAttribute("maxUploadSize").trim();
+                long xemlMaxUpload = 0;
+                try {
+                    xemlMaxUpload = Long.parseLong(maxUploadStr);
+                } catch(NumberFormatException e) {
+                    // do nothing, stick with 0L.
+                }
+                maxUpload = Math.min(ctxMaxUpload, xemlMaxUpload);
+            }
+
             try {
-                // TODO only enable multipart if allowed by both xeml and web.xml
-                // TODO only enable when request is multipart post
-                // TODO size limits for multipart should be configurable by xeml and web.xml
-                // TODO configurable temp directory
                 multipartResolver = new CommonsMultipartResolver(getServletContext());
                 if (multipartResolver.isMultipart(req)) {
                     multipartResolver.setMaxInMemorySize(10240); // 10KB
-                    multipartResolver.setMaxUploadSize(1024*1024*5); // 5MB
+                    multipartResolver.setMaxUploadSize(maxUpload);
+                    if (null != tmpDir) {
+                        multipartResolver.setUploadTempDir(tmpDir);
+                    }
                     req = multipartResolver.resolveMultipart(req);
                 }
-            } catch (MaxUploadSizeExceededException e) {
-                // TODO
-                throw e;
-            } catch (MultipartException e) {
-                // TODO
-                throw e;
-            }
 
-            params = new Params(this, req);
-            ctx = new EmailContext(templatesCache, resolver, params,  configURI, configDoc);
+                params = new Params(this, req);
+                ctx = new EmailContext(templatesCache, resolver, params,  configURI, configDoc);
 
-            try {
                 String redir = processDoc(ctx);
                 if (redir != null) {
                     res.sendRedirect(redir);
@@ -199,8 +206,12 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                     out.println("<center><h1>The email has been sent.</h1></center>");
                     out.println("</body></html>");
                 }
+            //} catch (MaxUploadSizeExceededException e) {
+                //throw e;
+            //} catch (MultipartException e) {
+                //throw e;
             } catch (Exception e) {
-                log("Error sending email", e);
+                logger.error("Error sending email", e);
                 String failureRedirect = null;
                 try {
                     failureRedirect =
@@ -210,23 +221,13 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                 }
                 if (!res.isCommitted()) {
                     res.reset();
-                    if (null != failureRedirect) {
+                    if (null != failureRedirect && failureRedirect.length() > 0) {
                         res.sendRedirect(failureRedirect);
                     } else {
                         res.setContentType("text/html");
                         printErrorMessage(res.getWriter(), e);
                     }
                 }
-                printErrorMessage(res.getWriter(), e);
-                java.io.PrintWriter eout = res.getWriter();
-                eout.println("<h1>Exception Thrown</h1>");
-                eout.println("<p>");
-                eout.println(e.toString());
-                eout.println("<p>");
-                eout.println("<h1>Stack Trace</h1>");
-                eout.println("\n<pre>");
-                e.printStackTrace(eout);
-                eout.println("</pre>");
             }
         } finally {
             if (null != multipartResolver && req instanceof MultipartHttpServletRequest) {
