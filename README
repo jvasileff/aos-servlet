@@ -13,7 +13,12 @@ Contents:
 Borrowed Code:
 
     From www.springframework.org under Apache 2.0 license:
-        org.anodyneos.servlet.multipart.AbstractMultipartHttpServletRequest
-        org.anodyneos.servlet.multipart.DefaultMultipartHttpServletRequest
         org.anodyneos.servlet.multipart.MultipartFile
+        org.anodyneos.servlet.multipart.MultipartException
         org.anodyneos.servlet.multipart.MultipartHttpServletRequest
+        org.anodyneos.servlet.multipart.commons.CommonsMultipartResolver
+        org.anodyneos.servlet.multipart.commons.CommonsFileUploadSupport
+        org.anodyneos.servlet.multipart.commons.CommonsMultipartFile
+        org.anodyneos.servlet.multipart.MaxUploadSizeExceededException
+        org.anodyneos.servlet.multipart.support.AbstractMultipartHttpServletRequest
+        org.anodyneos.servlet.multipart.support.DefaultMultipartHttpServletRequest
