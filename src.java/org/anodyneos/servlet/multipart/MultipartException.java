@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 the original author or authors.
+ * Copyright 2002-2006 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,18 @@ package org.anodyneos.servlet.multipart;
 
 import javax.servlet.ServletException;
 
-//import org.springframework.web.util.NestedServletException;
-
 /**
  * Exception thrown on multipart resolution.
  *
- * <p>Extends ServletException for convenient throwing in any Servlet resource
- * (such as a Filter), and NestedServletException for proper root cause handling
- * (as the plain ServletException doesn't expose its root cause at all).
+ * <p>Extends IOException for convenient throwing in any Servlet/Portlet resource
+ * (such as a Filter), and NestedIOException for proper root cause handling.
  *
  * @author Trevor D. Cook
+ * @author Juergen Hoeller
  * @since 29.09.2003
  * @see MultipartResolver#resolveMultipart
  * @see org.springframework.web.multipart.support.MultipartFilter
+ * @see org.springframework.core.NestedIOException
  */
 public class MultipartException extends ServletException {
 
@@ -38,7 +37,7 @@ public class MultipartException extends ServletException {
 
     /**
      * Constructor for MultipartException.
-     * @param msg message
+     * @param msg the detail message
      */
     public MultipartException(String msg) {
         super(msg);
@@ -46,11 +45,11 @@ public class MultipartException extends ServletException {
 
     /**
      * Constructor for MultipartException.
-     * @param msg message
-     * @param ex root cause from multipart parsing API in use
+     * @param msg the detail message
+     * @param cause the root cause from the multipart parsing API in use
      */
-    public MultipartException(String msg, Throwable ex) {
-        super(msg, ex);
+    public MultipartException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 
 }

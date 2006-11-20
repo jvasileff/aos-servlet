@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.anodyneos.servlet.multipart.MultipartFile;
-import org.anodyneos.servlet.multipart.support.MultipartHttpServletRequest;
+import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 
 /**
  * Abstract base implementation of the MultipartHttpServletRequest interface.

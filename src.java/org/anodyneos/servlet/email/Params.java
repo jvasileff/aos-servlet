@@ -31,7 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.anodyneos.servlet.multipart.MultipartFile;
-import org.anodyneos.servlet.multipart.support.MultipartHttpServletRequest;
+import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 import org.anodyneos.servlet.util.HttpServletRequestAsMap;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;

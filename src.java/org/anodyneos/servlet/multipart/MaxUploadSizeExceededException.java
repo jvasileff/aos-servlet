@@ -25,6 +25,8 @@ package org.anodyneos.servlet.multipart;
  */
 public class MaxUploadSizeExceededException extends MultipartException {
 
+    private static final long serialVersionUID = -7331717333808731287L;
+
     private final long maxUploadSize;
 
     /**
