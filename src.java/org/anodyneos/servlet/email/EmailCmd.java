@@ -110,8 +110,11 @@ public class EmailCmd implements Command {
         Transport.send(message);
     }
 
-    protected void processPart(EmailContext ctx, MimePart part, Element el)
+    protected boolean processPart(EmailContext ctx, MimePart part, Element el)
     throws MessagingException, ServletException, URI.MalformedURIException, IOException {
+
+        boolean partExists = false;
+
         String mimeType = el.getAttribute("mimeType").trim();
         String fileName = el.getAttribute("fileName").trim();
 
@@ -135,6 +138,7 @@ public class EmailCmd implements Command {
                 part.setFileName(fileName);
             }
             part.setDataHandler(new DataHandler(ds));
+            partExists = true;
         } else if (substResultContent != null) {
             String path = substResultContent.getAttribute("path").trim();
             String charset = substResultContent.getAttribute("charset").trim();
@@ -176,6 +180,7 @@ public class EmailCmd implements Command {
                 part.setFileName(fileName);
             }
             part.setDataHandler(new DataHandler(ds));
+            partExists = true;
         } else if (fileContent != null) {
             // TODO: Make secure
             String charset = fileContent.getAttribute("charset").trim();
@@ -193,14 +198,25 @@ public class EmailCmd implements Command {
                 part.setFileName(fileName);
             }
             part.setDataHandler(new DataHandler(ds));
+            partExists = true;
         } else if (reqFileContent != null) {
-            // TODO - allow optional part - only add if file was uploaded
-            // TODO - full support for specifying filename, mime, etc.
-            // TODO - support for adding variable # of parts based on file uploads provided?
-            // TODO - make sure file was actually uploaded, not just that the form had an upload control
-            MultipartFile mf = ctx.getParams().getRequestFile("myFile");
-            if (null != mf) {
+            String param = reqFileContent.getAttribute("param").trim();
+            MultipartFile mf = ctx.getParams().getRequestFile(param);
+            if (null == mf || mf.isEmpty()) {
+                partExists = false;
+            } else {
+                partExists = true;
                 MultipartFileDataSource ds = new MultipartFileDataSource(mf);
+                String charset = reqFileContent.getAttribute("charset").trim();
+                if (charset.length() != 0) {
+                    ds.setCharset(charset);
+                }
+                if (mimeType.length() != 0) {
+                    ds.setMimeType(mimeType);
+                }
+                if(fileName.length() != 0) {
+                    ds.setName(fileName);
+                }
                 part.setFileName(ds.getName());
                 part.setDataHandler(new DataHandler(ds));
             }
@@ -220,7 +236,9 @@ public class EmailCmd implements Command {
                 part.setFileName(fileName);
             }
             part.setDataHandler(new DataHandler(ds));
+            partExists = true;
         }
+        return partExists;
     }
 
     /**
@@ -242,8 +260,9 @@ public class EmailCmd implements Command {
                 Element el = (Element) n;
                 if ("part".equals(el.getNodeName())) {
                     MimeBodyPart p = new MimeBodyPart();
-                    processPart(ctx, p, el);
-                    multipart.addBodyPart(p);
+                    if (processPart(ctx, p, el)) {
+                        multipart.addBodyPart(p);
+                    }
                 } else if ("multipart".equals(el.getNodeName())) {
                     MimeBodyPart p = new MimeBodyPart();
                     processMultipart(ctx, p, el);

@@ -41,8 +41,13 @@
             <part mimeType="text/xml" fileName="testxslout.xml">
                 <xslResultContent path="xsltest.xsl"/>
             </part>
-            <part fileName="myFile.txt">
-                <requestFileContent name="myFile"/>
+            <!--
+            <part mimeType="application/octet-stream" fileName="myFile.txt">
+                <requestFileContent param="myFile" charset="UTF-8"/>
+            </part>
+            -->
+            <part>
+                <requestFileContent param="myFile"/>
             </part>
         </multipart>
 
