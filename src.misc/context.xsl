@@ -25,11 +25,20 @@
                 debug="0"
                 privileged="false">
 
-            <xsl:if test="$webapp.reloadable = 'true'">
-                <xsl:attribute name="reloadable">true</xsl:attribute>
-                <Loader checkInterval="1" reloadable="true" delegate="false"/>
-            </xsl:if>
-
+            <xsl:choose>
+                <xsl:when test="$webapp.reloadable = 'true'">
+                    <xsl:attribute name="reloadable">true</xsl:attribute>
+                    <Loader backgroundProcesssorDelay="1"
+                            useSystemClassLoaderAsParent="false"
+                            reloadable="true"
+                            delegate="false"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <Loader useSystemClassLoaderAsParent="false"
+                            reloadable="false"
+                            delegate="false"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </Context>
     </xsl:template>
 
