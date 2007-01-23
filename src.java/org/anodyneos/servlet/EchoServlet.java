@@ -10,6 +10,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.anodyneos.servlet.util.HttpServletRequestAsMap;
 
@@ -24,15 +26,23 @@ public class EchoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 3761131517971215408L;
 
+    protected static final Log logger = LogFactory.getLog(EchoServlet.class);
+
     static String CONTINUE_URL = "continueURL";
     static String INFO = "helpText";
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
+        req.setCharacterEncoding("UTF-8");
+        res.setCharacterEncoding("UTF-8");
+
         Enumeration paramNames = req.getParameterNames();
         res.setContentType("text/html");
         java.io.PrintWriter out = res.getWriter();
 
-        out.println("<html><head><title>Echo Servlet</title></head>");
+        out.println("<html><head>");
+        out.println("<title>Echo Servlet</title>");
+        out.println("<META http-equiv='Content-Type' content='text/html; charset=UTF-8'>");
+        out.println("</head>");
         out.println("<body>");
         if (req.getParameter(INFO) != null) {
             out.println("<p>");
@@ -60,6 +70,17 @@ public class EchoServlet extends HttpServlet {
         }
         out.println("</table>");
         */
+
+        out.println("<form method='get'  queryCharset='utf-8' queryEncoding='utf-8'><input name='in'><input type='submit' value='submit get'></form>");
+        out.println("<form method='post' queryCharset='utf-8' queryEncoding='utf-8'><input name='in'><input type='submit' value='submit post'></form>");
+        out.println("<p>Note: For method='get', on tomcat, the connector defined in the server.xml file must have the 'URIEncoding' attribute set correctly.</p>");
+
+        // Info
+        out.println("<h1>Info–</h1>");
+        out.println("<table border='1'>");
+        out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
+        outputRows(out, "HttpServletRequest.getCharacterSet", new String[] { req.getCharacterEncoding() });
+        out.println("</table>");
 
         // Request Parameters
         out.println("<h1>Request Parameters</h1>");
