@@ -71,8 +71,8 @@ public class EchoServlet extends HttpServlet {
         out.println("</table>");
         */
 
-        out.println("<form method='get'  queryCharset='utf-8' queryEncoding='utf-8'><input name='in'><input type='submit' value='submit get'></form>");
-        out.println("<form method='post' queryCharset='utf-8' queryEncoding='utf-8'><input name='in'><input type='submit' value='submit post'></form>");
+        out.println("<form method='get'  queryCharset='utf-8' queryEncoding='utf-8'><input name='testGet' ><input type='submit' value='submit get'></form>");
+        out.println("<form method='post' queryCharset='utf-8' queryEncoding='utf-8'><input name='testPost'><input type='submit' value='submit post'></form>");
         out.println("<p>Note: For method='get', on tomcat, the connector defined in the server.xml file must have the 'URIEncoding' attribute set correctly.</p>");
 
         // Info
