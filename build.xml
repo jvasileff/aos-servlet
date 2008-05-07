@@ -28,9 +28,12 @@
     <property name="jakarta-regexp-1.3.jar" location="${dir.jars}/jakarta-regexp-1.3/jakarta-regexp-1.3.jar"/>
     <property name="resolver.jar" location="${dir.jars}/xml-commons-resolver-1.1/resolver.jar"/>
     <property name="servlet.jar" location="${dir.jars}/servlet-api-2.4/servlet-api.jar"/>
-    <property name="xml-apis.jar" location="${dir.jars}/xerces-2.6.0/xml-apis.jar"/>
-    <property name="xalan.jar" location="${dir.jars}/xalan-2.6.2/xalan.jar"/>
-    <property name="xercesImpl.jar" location="${dir.jars}/xerces-2.6.0/xercesImpl.jar"/>
+
+    <property name="xml-apis.jar" location="${dir.jars}/xalan-2.7.1/xml-apis.jar"/>
+    <property name="xalan.jar" location="${dir.jars}/xalan-2.7.1/xalan.jar"/>
+    <property name="xercesImpl.jar" location="${dir.jars}/xalan-2.7.1/xercesImpl.jar"/>
+    <property name="serializer.jar" location="${dir.jars}/xalan-2.7.1/serializer.jar"/>
+    <property name="xsltc.jar" location="${dir.jars}/xalan-2.7.1/xsltc.jar"/>
 
     <property name="junit.jar" location="${dir.jars}/junit-3.8.1/junit.jar"/>
 
@@ -59,16 +62,19 @@
         <copy toDir="${dir.build.ide.lib}" file="${jakarta-regexp-1.3.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${resolver.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${servlet.jar}"/>
+
+        <copy toDir="${dir.build.ide.lib}" file="${xml-apis.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${xalan.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${serializer.jar}"/>
+        <copy toDir="${dir.build.ide.lib}" file="${xsltc.jar}"/>
+
         <copy toDir="${dir.build.ide.lib}" file="${activation.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${imap.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${mail.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${mailapi.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${pop3.jar}"/>
         <copy toDir="${dir.build.ide.lib}" file="${smtp.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${xml-apis.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${xalan.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
 
         <copy toDir="${dir.build.ide.lib}" file="${junit.jar}"/>
 
