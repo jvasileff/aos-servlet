@@ -99,6 +99,7 @@
         <fileset id="fs.jars" dir="${dir.build.ide.lib}">
             <include name="*.jar"/>
             <exclude name="servlet-api.jar"/>
+            <exclude name="commons-logging-1.1.1.jar"/>
         </fileset>
     </target>
 
