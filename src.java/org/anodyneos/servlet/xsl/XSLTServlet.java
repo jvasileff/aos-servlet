@@ -295,6 +295,13 @@ public class XSLTServlet extends HttpServlet {
                 if(clientCache) {
                     // either (1)
                     URL url = getServletContext().getResource(req.getServletPath());
+
+                    // 404 not found ?
+                    if (url == null) {
+                        res.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                    }
+
                     URLConnection conn = url.openConnection();
                     long lastModified = conn.getLastModified();
                     if(lastModified != 0) {
