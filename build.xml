@@ -21,7 +21,7 @@
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  required jars
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-    <property name="anodyneos-commons.jar" location="${dir.jars}/anodyneos-commons-rel-00.03/anodyneos-commons.jar"/>
+    <property name="anodyneos-commons.jar" location="${dir.jars}/anodyneos-commons-0.3/anodyneos-commons.jar"/>
 
     <property name="javacc.jar" location="${dir.jars}/javacc-3.2/javacc.jar"/>
     <property name="junit-4.4.jar" location="${dir.jars}/junit-4.4/junit-4.4.jar"/>
