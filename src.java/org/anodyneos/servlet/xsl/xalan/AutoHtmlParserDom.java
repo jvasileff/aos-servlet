@@ -105,6 +105,7 @@ public class AutoHtmlParserDom extends AutoHtmlParser {
         // first, write out cached text to node
         flushText();
 
+        // FIXME: Need to be able to configure whether namespaces are used.
         // add "a" element
         //Element el = doc.createElementNS("http://www.w3.org/1999/xhtml", "a");
         Element el = doc.createElement("a");
