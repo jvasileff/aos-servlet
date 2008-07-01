@@ -7,6 +7,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -31,7 +33,6 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.anodyneos.commons.net.ClassLoaderURIHandler;
-import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.xml.StripNamespaceFilter;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
@@ -407,14 +408,12 @@ public class XSLTServlet extends HttpServlet {
         out.close();
     }
 
-    private void serveTranslated(HttpServletRequest req, HttpServletResponse res, Document doc,
-            String xslPath) throws URI.MalformedURIException, IOException,
-            TransformerConfigurationException, TransformerException, SAXException,
-            ParserConfigurationException {
+    private void serveTranslated(HttpServletRequest req, HttpServletResponse res, Document doc, String xslPath)
+            throws URISyntaxException, IOException, TransformerConfigurationException,
+            TransformerException, SAXException, ParserConfigurationException {
 
-        org.anodyneos.commons.net.URI xslURI;
-        xslURI = new org.anodyneos.commons.net.URI(new org.anodyneos.commons.net.URI("webapp://"
-                + req.getServletPath()), xslPath);
+        URI baseURI = new URI("webapp://" + req.getServletPath());
+        URI xslURI = baseURI.resolve(xslPath);
         Transformer transformer = templatesCache.getTransformer(xslURI);
 
         String method = transformer.getOutputProperty(OutputKeys.METHOD);

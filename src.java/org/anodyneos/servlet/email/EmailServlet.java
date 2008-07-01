@@ -3,6 +3,8 @@ package org.anodyneos.servlet.email;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -14,7 +16,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.anodyneos.commons.net.ClassLoaderURIHandler;
-import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
@@ -132,8 +133,7 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
             try {
                 //configURI = new URI("webapp:///WEB-INF/email/" + req.getPathInfo());
                 configURI = new URI("webapp://" + req.getServletPath());
-                configDoc = getDocumentBuilder().parse(
-                        resolver.resolveEntity("", configURI.toString()));
+                configDoc = getDocumentBuilder().parse(resolver.resolveEntity("", configURI.toString()));
 
                 // allow the config file to specify request encoding prior to parsing get/post
                 String forceRequestEncoding = null;
@@ -229,6 +229,8 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                     }
                 }
             }
+        } catch (URISyntaxException e) {
+            throw new ServletException(e);
         } finally {
             if (null != multipartResolver && req instanceof MultipartHttpServletRequest) {
                 multipartResolver.cleanupMultipart((MultipartHttpServletRequest) req);

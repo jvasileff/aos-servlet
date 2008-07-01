@@ -3,6 +3,8 @@ package org.anodyneos.servlet.email;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +23,6 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimePart;
 import javax.servlet.ServletException;
 
-import org.anodyneos.commons.net.URI;
 import org.anodyneos.servlet.multipart.MultipartFile;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -111,7 +112,7 @@ public class EmailCmd implements Command {
     }
 
     protected boolean processPart(EmailContext ctx, MimePart part, Element el)
-    throws MessagingException, ServletException, URI.MalformedURIException, IOException {
+    throws MessagingException, ServletException, URISyntaxException, IOException {
 
         boolean partExists = false;
 
@@ -150,7 +151,7 @@ public class EmailCmd implements Command {
             if (path.length() == 0) {
                 text = ctx.getParams().parse(Util.getText(substResultContent));
             } else {
-                URI uri = new URI(ctx.getConfigURI(), path);
+                URI uri = ctx.getConfigURI().resolve(path);
                 try {
                     InputStream is = ctx.getResolver().openStream(uri);
                     StringWriter sw = new StringWriter();
@@ -185,7 +186,7 @@ public class EmailCmd implements Command {
             // TODO: Make secure
             String charset = fileContent.getAttribute("charset").trim();
             String path = fileContent.getAttribute("path").trim();
-            URI uri = new URI(ctx.getConfigURI(), path);
+            URI uri = ctx.getConfigURI().resolve(path);
             URIDataSource ds = new URIDataSource(uri, ctx.getResolver());
             if (charset.length() != 0) {
                 ds.setCharset(charset);
@@ -223,7 +224,7 @@ public class EmailCmd implements Command {
         } else if (xslResultContent != null) {
             String charset = xslResultContent.getAttribute("charset").trim();
             String path = xslResultContent.getAttribute("path").trim();
-            URI uri = new URI(ctx.getConfigURI(), path);
+            URI uri = ctx.getConfigURI().resolve(path);
             XSLDataSource ds = new XSLDataSource(ctx.getTemplatesCache(), uri, ctx.getParams());
             if (charset.length() != 0) {
                 ds.setCharset(charset);
@@ -246,7 +247,7 @@ public class EmailCmd implements Command {
      *  <code>MimeMultipart</code> content.
      */
     protected void processMultipart(EmailContext ctx, MimePart part, Element multipartEl)
-    throws MessagingException, ServletException, URI.MalformedURIException, IOException {
+    throws MessagingException, ServletException, URISyntaxException, IOException {
         MimeMultipart multipart = new MimeMultipart();
         String subType = multipartEl.getAttribute("subType").trim();
         if (subType.length() > 0) {

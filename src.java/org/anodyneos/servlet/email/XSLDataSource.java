@@ -1,18 +1,17 @@
 package org.anodyneos.servlet.email;
 
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
 
 public class XSLDataSource extends ADataSource {

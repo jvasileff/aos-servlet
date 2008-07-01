@@ -1,6 +1,7 @@
 package org.anodyneos.servlet.email;
 
-import org.anodyneos.commons.net.URI;
+import java.net.URI;
+
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
 import org.w3c.dom.Document;

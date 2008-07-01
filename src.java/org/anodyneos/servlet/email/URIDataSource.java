@@ -2,8 +2,8 @@ package org.anodyneos.servlet.email;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 
-import org.anodyneos.commons.net.URI;
 import org.anodyneos.commons.net.URIHelper;
 
 public class URIDataSource implements javax.activation.DataSource {
