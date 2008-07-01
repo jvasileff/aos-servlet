@@ -37,7 +37,7 @@ public class XSLDataSource extends ADataSource {
             if (null != getCharset()) {
                 trans.setOutputProperty(OutputKeys.ENCODING, getCharset());
             }
-            trans.setURIResolver(xslCache.getResolver());
+            trans.setURIResolver(xslCache.getUnifiedResolver());
 
             trans.transform(new DOMSource(params.getDocument()), new StreamResult(baos));
         } catch (IOException e) {
