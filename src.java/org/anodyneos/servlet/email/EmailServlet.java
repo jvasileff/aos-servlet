@@ -18,6 +18,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.anodyneos.commons.net.ClassLoaderURIHandler;
 import org.anodyneos.commons.xml.UnifiedResolver;
 import org.anodyneos.commons.xml.xsl.TemplatesCache;
+import org.anodyneos.commons.xml.xsl.TemplatesCacheImpl;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 import org.anodyneos.servlet.multipart.commons.CommonsMultipartResolver;
 import org.anodyneos.servlet.net.ServletContextURIHandler;
@@ -87,7 +88,8 @@ public class EmailServlet extends javax.servlet.http.HttpServlet {
                 new ServletContextURIHandler(servletConfig.getServletContext()));
 
         // Setup templatesCache
-        templatesCache = new TemplatesCache(resolver);
+        templatesCache = new TemplatesCacheImpl();
+        templatesCache.setUnifiedResolver(resolver);
         if (FALSE.equals(servletConfig.getInitParameter(IP_TEMPLATE_CACHE))) {
             templatesCache.setCacheEnabled(false);
         } else {

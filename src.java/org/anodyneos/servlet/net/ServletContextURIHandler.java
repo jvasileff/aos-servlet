@@ -6,6 +6,7 @@ import java.net.URL;
 
 import javax.servlet.ServletContext;
 
+import org.anodyneos.commons.net.AbstractURIHandler;
 import org.anodyneos.commons.net.URIHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author jvas
  */
-public class ServletContextURIHandler extends URIHandler {
+public class ServletContextURIHandler extends AbstractURIHandler implements URIHandler {
 
     private static final Log log = LogFactory.getLog(ServletContextURIHandler.class);
     private ServletContext servletContext;
