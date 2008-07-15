@@ -39,9 +39,9 @@ PARSER_END(AutoHtmlParser)
 
 TOKEN :
 {
-    <URL_FULL:      <URL_MAILTO> | (<PROTOCOL> "://" <DOMAIN> (<PATH_URL>)?) >
+    <URL_FULL:      <URL_MAILTO> | (<PROTOCOL> "://" <DOMAIN> (<PORT>)? (<PATH_URL>)?) >
 |   <URL_FTP:       <DOMAIN_FTP> (<PATH_URL>)? >
-|   <URL_WWW:       <DOMAIN_WWW> (<PATH_URL>)? >
+|   <URL_WWW:       <DOMAIN_WWW> (<PORT>)? (<PATH_URL>)? >
 |   <EMAIL:         <EMAIL_USER> "@" <DOMAIN_BIG> >
 |   <SPACE:         ([" ", "\t", "\f"])+  >
 |   <EOL:           "\n" | "\r" | "\r\n"  >
@@ -52,11 +52,12 @@ TOKEN :
 |   <#DOMAIN_WWW:   <DOMAIN> "." <TLD>
 |                   <WWW_PREFIX> "." <DOMAIN> >
 |   <#DOMAIN_BIG:   (<DOMAIN_PART> ".")+ <DOMAIN_PART> >
+|   <#PORT:         ":" (["0"-"9"])+ >
 |   <#DOMAIN:       (<DOMAIN_PART> ".")* <DOMAIN_PART> >
 |   <#DOMAIN_PART:  (  ["a"-"z"] (["a"-"z", "0"-"9", "-"])* (["a"-"z", "0"-"9"])+  )
 |                   (  ["a"-"z"] (["a"-"z", "0"-"9"])*) >
 |   <#PROTOCOL:     "news" | "http" | "https" | "ftp" | "mailto" >
-|   <#TLD:          "com" | "net" | "org" | "gov" >
+|   <#TLD:          "com" | "net" | "org" | "gov" | "edu" | "biz" | "info" | "mil" >
 |   <#WWW_PREFIX:   "www" >
 |   <#FTP_PREFIX:   "ftp" >
 |   <#PATH_URL:     ("/" | "?") <PATH> >
