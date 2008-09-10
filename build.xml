@@ -107,7 +107,7 @@
     ~~  compile.pre
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 
-    <target name="compile.pre" depends="autoHtmlGen"/>
+    <target name="compile.pre" depends="autoHtmlGen, bbCodeGen"/>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  autoHtmlPrepare
@@ -135,6 +135,35 @@
             <arg line="-OUTPUT_DIRECTORY=${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
             <arg line="-STATIC=false"/>
             <arg line="${dir.src.java}/org/anodyneos/servlet/xsl/xalan/AutoHtmlParser.jj"/>
+        </java>
+    </target>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  bbCodePrepare
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+    <target name="bbCodePrepare" depends="prepare">
+        <mkdir dir="${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
+
+        <uptodate
+            property="bbCode.notRequired"
+            targetfile="${dir.build.java}/org/anodyneos/servlet/xsl/xalan/BBCodeParser.java">
+            <srcfiles dir="${dir.src.java}/org/anodyneos/servlet/xsl/xalan" includes="BBCodeParser.jj"/>
+        </uptodate>
+    </target>
+
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  bbCodeGen
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
+    <target name="bbCodeGen" depends="prepare, bbCodePrepare" unless="bbCode.notRequired">
+        <java   classname="org.javacc.parser.Main"
+                fork="yes"
+                failonerror="true" >
+            <classpath refid="path.compile"/>
+            <arg line="-OUTPUT_DIRECTORY=${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
+            <arg line="-STATIC=false"/>
+            <arg line="${dir.src.java}/org/anodyneos/servlet/xsl/xalan/BBCodeParser.jj"/>
         </java>
     </target>
 

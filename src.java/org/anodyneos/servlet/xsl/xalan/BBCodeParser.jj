@@ -1,0 +1,216 @@
+options {
+    LOOKAHEAD = 5;
+    FORCE_LA_CHECK = true;
+    IGNORE_CASE = true;
+    DEBUG_PARSER = false;
+    STATIC = false;
+    UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(BBCodeParser)
+
+package org.anodyneos.servlet.xsl.xalan;
+
+public abstract class BBCodeParser {
+
+    /*
+        These abstract methods provide the ability to process the parsed
+        result.
+    */
+    protected abstract void processWord(String s);
+    protected abstract void processSpace(String s);
+    protected abstract void processEol(String s);
+    protected abstract void processEmail(String s);
+    protected abstract void processUrl(String s);
+    protected abstract void processFtp(String s);
+    protected abstract void processWww(String s);
+
+    protected abstract void startBold();
+    protected abstract void endBold();
+
+    protected abstract void startItalics();
+    protected abstract void endItalics();
+
+}
+
+PARSER_END(BBCodeParser)
+
+/*
+    Whitespace not forced after A or B
+
+    Path not allowed (mozilla):
+       "\"", "'", ")", "<", ">", "]", "|", "}"
+       Path cannot end in ".", ";"
+       Path section of URLs must start with either "/" or "?".
+*/
+
+TOKEN :
+{
+    <END:           "[/" <TAG> "]" >
+|   <LEFT:          "[" > : IN_TAG
+//    <BOLDSTART:     "[b]"     >
+//|   <BOLDEND:       "[/b]"    >
+//|   <ITALICSSTART:  "[i]"     >
+//|   <ITALICSEND:    "[/i]"    >
+|   <URL_FULL:      <URL_MAILTO> | (<PROTOCOL> "://" <DOMAIN> (<PORT>)? (<PATH_URL>)?) >
+|   <URL_FTP:       <DOMAIN_FTP> (<PATH_URL>)? >
+|   <URL_WWW:       <DOMAIN_WWW> (<PORT>)? (<PATH_URL>)? >
+|   <EMAIL:         <EMAIL_USER> "@" <DOMAIN_BIG> >
+|   <SPACE:         ([" ", "\t", "\f"])+  >
+|   <EOL:           "\n" | "\r" | "\r\n"  >
+|   <NONE:          "" > : WORD_OK // as last resort, try matching a word
+|   <#URL_MAILTO:   "mailto:" <EMAIL_USER> "@" <DOMAIN> >
+|   <#EMAIL_USER:   (["-", "." ,"0"-"9", ":", "=", "A"-"Z", "_", "a"-"z", "~" ])+ >
+|   <#DOMAIN_FTP:   <FTP_PREFIX> "." <DOMAIN> >
+|   <#DOMAIN_WWW:   <DOMAIN> "." <TLD>
+|                   <WWW_PREFIX> "." <DOMAIN> >
+|   <#DOMAIN_BIG:   (<DOMAIN_PART> ".")+ <DOMAIN_PART> >
+|   <#PORT:         ":" (["0"-"9"])+ >
+|   <#DOMAIN:       (<DOMAIN_PART> ".")* <DOMAIN_PART> >
+|   <#DOMAIN_PART:  (  ["a"-"z"] (["a"-"z", "0"-"9", "-"])* (["a"-"z", "0"-"9"])+  )
+|                   (  ["a"-"z"] (["a"-"z", "0"-"9"])*) >
+|   <#PROTOCOL:     "news" | "http" | "https" | "ftp" | "mailto" >
+|   <#TLD:          "com" | "net" | "org" | "gov" | "edu" | "biz" | "info" | "mil" >
+|   <#WWW_PREFIX:   "www" >
+|   <#FTP_PREFIX:   "ftp" >
+|   <#PATH_URL:     ("/" | "?") <PATH> >
+|   <#PATH:         ([  "!","#","$","%","&","(","*","+", ",","-",".","/","0"-"9",":",";",
+                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])*
+                    ([  "!","#","$","%","&","(","*","+", ",","-",    "/","0"-"9",":",
+                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])+ >
+|   <TAG:           "b" | "i" >
+}
+
+<WORD_OK>
+TOKEN :
+{
+    // match characters and punctuation seperately
+    // in order to match things HTML text, for example:
+    // <a href="http://www.news.com">www.news.com</a>
+    //<WORD:          (~[" ", "\t", "\n", "\r", "\f"])+ > : DEFAULT
+    <WORD:          <CHARS> | <PUNCTUATION> > : DEFAULT
+|   <#CHARS:        (["a"-"z"])+ >
+|   <#PUNCTUATION:  (~["a"-"z", " ", "\t", "\n", "\r", "\f"])+ >
+}
+
+<IN_TAG>
+TOKEN :
+{
+    <VALUE:         ( ["a"-"z"] )+ >
+|   <EQUALS:        "=" >
+|   <RIGHT:         "]" > : DEFAULT
+|   <BADTAGTOK:     "" > : DEFAULT
+}
+
+void Input():
+{ }
+{
+    (start()|start2()|misc()|end()|simpleContent())* <EOF>
+}
+
+/*
+void content() :
+{ }
+{
+    (start()|end()|simpleContent())* <EOF>
+}
+*/
+
+void start() :
+{
+    Token t = null;
+}
+{
+    <LEFT> t=<VALUE> <RIGHT>
+    {
+        processWord("<" + t.image + ">");
+    }
+}
+
+void start2() :
+{
+    Token tag = null;
+    Token value = null;
+}
+{
+    <LEFT> tag=<VALUE> <EQUALS> value=<VALUE> <RIGHT>
+    {
+        processWord("<" + tag.image + "=" + value.image + ">");
+    }
+}
+
+void misc() :
+{
+    Token t = null;
+}
+{
+    t = <LEFT> | t = <BADTAGTOK> | t = <VALUE>
+    {
+        processWord(t.image);
+    }
+}
+
+void end() :
+{
+    Token t = null;
+}
+{
+    t = <END>
+    {
+        processWord("</" + t.image + ">");
+    }
+}
+
+/*
+void bold() :
+{}
+{
+    (
+        { startBold();  }
+        <BOLDSTART>(content())*<BOLDEND>
+        { endBold();  }
+    ) //|
+    //(
+        //<BOLDSTART>
+    //) |
+    //(
+        //<BOLDEND>
+    //)
+}
+
+void italics() :
+{}
+{
+    { startItalics();  }
+    <ITALICSSTART>(content())*<ITALICSEND>
+    { endItalics();  }
+}
+*/
+
+void simpleContent():
+{
+    Token t = null;
+}
+{
+    (
+        (
+              t = <EMAIL>
+            | t = <URL_FULL>
+            | t = <URL_WWW>
+            | t = <URL_FTP>
+            | t = <SPACE>
+            | t = <EOL>
+            | t = <NONE>        // enable word matching
+            | t = <WORD>
+        )
+        {
+            if (t.kind == EMAIL     ) processEmail(t.image);
+            if (t.kind == URL_FULL  ) processUrl(t.image);
+            if (t.kind == URL_WWW   ) processWww(t.image);
+            if (t.kind == URL_FTP   ) processFtp(t.image);
+            if (t.kind == WORD      ) processWord(t.image);
+            if (t.kind == SPACE     ) processSpace(t.image);
+            if (t.kind == EOL       ) processEol(t.image);
+        }
+    )
+}
