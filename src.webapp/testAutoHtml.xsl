@@ -12,8 +12,9 @@
     xmlns:aostest="http://www.anodyneos.org/aostest"
     xmlns:xalan="http://xml.apache.org/xalan"
     xmlns:autoHtml="org.anodyneos.servlet.xsl.xalan.AutoHtml"
+    xmlns:bbCode="org.anodyneos.servlet.xsl.xalan.BBCode"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    extension-element-prefixes="autoHtml">
+    extension-element-prefixes="autoHtml bbCode">
 
     <xsl:output
             method="xml"
@@ -31,6 +32,14 @@
         <autoHtml:autoHtml select="."/>
         <hr/>
         <xsl:copy-of select="autoHtml:autoHtml(.)"/>
+        <hr/>
+    </xsl:template>
+
+    <xsl:template match="aostest:bbCode">
+        <hr/>
+        <bbCode:bbCode select="."/>
+        <hr/>
+        <xsl:copy-of select="bbCode:bbCode(.)"/>
         <hr/>
     </xsl:template>
 

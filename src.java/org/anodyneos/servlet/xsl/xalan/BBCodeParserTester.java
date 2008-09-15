@@ -37,11 +37,17 @@ public class BBCodeParserTester extends BBCodeParser {
     protected void processFtp(String s)    { addHref("ftp://" + s, s); }
     protected void processWww(String s)    { addHref("http://" + s, s); }
 
-    protected void startBold() { sb.append("<b>"); }
-    protected void endBold() { sb.append("</b>"); }
+    protected void processInvalidOpen(String s) { sb.append(s); }
+    protected void processOpenSimpleTag(String s) { sb.append("<" + s + ">"); }
+    protected void processCloseTag(String s) { sb.append("</" + s + ">"); }
 
-    protected void startItalics() { sb.append("<i>"); }
-    protected void endItalics() { sb.append("</i>"); }
+    protected void processOpenUrlFtpTag(String s) { processOpenUrlTag("ftp://" + s); }
+    protected void processOpenUrlWwwTag(String s) { processOpenUrlTag("http://" + s); }
+    protected void processOpenUrlEmailTag(String s) { processOpenUrlTag("mailto:" + s); }
+
+    protected void processOpenUrlTag(String s) { sb.append("<a href='" + s + "'>"); }
+    protected void processOpenColorTag(String s) { sb.append("<span style='color:" + s + "'>"); }
+    protected void processOpenSizeTag(String s) { sb.append("<span style='size:" + s + "%'>"); }
 
     private void addHref(String href, String display) {
         sb.append("<a href='" + href + "'>" + display + "</a>");

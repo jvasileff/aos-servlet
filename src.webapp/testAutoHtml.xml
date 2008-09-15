@@ -14,4 +14,45 @@
 
         autohtml http://example.com.</aostest:autoHtml>
     </p>
+
+    <hr/>
+
+    <h1>Testing 7..</h1>
+    <p>
+        This paragraph does not have [b]bold[/b] and [color=red]red[/color].
+
+        [quote]
+            This is quoted
+            [quote]
+                [size=150]This is quoted2[/size]
+            [/quote]
+        [/quote]
+
+        bbCode http://example.com.
+    </p>
+    <p>
+        <aostest:bbCode>This paragraph does have [b]bold[/b] and [color=red]red[/color].
+
+        [quote]
+            This is quoted
+            [quote]
+                [size=150]This is quoted2[/size]
+            [/quote]
+        [/quote]
+
+sometext
+-------------
+sometext2
+
+[code]
+// match characters and punctuation seperately
+// in order to match things HTML text, for example:
+// &lt;a href="http://www.news.com">www.news.com&lt;/a>
+//&lt;WORD:          (~[" ", "\t", "\n", "\r", "\f"])+ > : DEFAULT
+  &lt;WORD:          &lt;CHARS> | &lt;PUNCTUATION> > : DEFAULT
+[/code]
+
+        bbCode http://example.com.</aostest:bbCode>
+    </p>
+
 </html>

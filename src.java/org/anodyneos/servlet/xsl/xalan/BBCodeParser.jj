@@ -1,5 +1,5 @@
 options {
-    LOOKAHEAD = 5;
+    LOOKAHEAD = 1;
     FORCE_LA_CHECK = true;
     IGNORE_CASE = true;
     DEBUG_PARSER = false;
@@ -13,23 +13,36 @@ package org.anodyneos.servlet.xsl.xalan;
 
 public abstract class BBCodeParser {
 
-    /*
-        These abstract methods provide the ability to process the parsed
-        result.
-    */
+    public static final String TAG_BOLD = "b";
+    public static final String TAG_ITALICS = "i";
+    public static final String TAG_UNDERLINE = "u";
+    public static final String TAG_STRIKETHROUGH = "s";
+    public static final String TAG_QUOTE = "quote";
+    public static final String TAG_CODE = "code";
+    public static final String TAG_URL = "url";
+    public static final String TAG_COLOR = "color";
+    public static final String TAG_SIZE = "size";
+
+    private BBCodeTagCloseHelper tagCloseHelper = new BBCodeTagCloseHelper(this);
+
     protected abstract void processWord(String s);
     protected abstract void processSpace(String s);
     protected abstract void processEol(String s);
-    protected abstract void processEmail(String s);
     protected abstract void processUrl(String s);
+    protected abstract void processEmail(String s);
     protected abstract void processFtp(String s);
     protected abstract void processWww(String s);
 
-    protected abstract void startBold();
-    protected abstract void endBold();
+    protected abstract void processInvalidOpen(String s);
+    protected abstract void processCloseTag(String s);
 
-    protected abstract void startItalics();
-    protected abstract void endItalics();
+    protected abstract void processOpenSimpleTag(String s);
+    protected abstract void processOpenUrlTag(String s);
+    protected abstract void processOpenUrlFtpTag(String s);
+    protected abstract void processOpenUrlWwwTag(String s);
+    protected abstract void processOpenUrlEmailTag(String s);
+    protected abstract void processOpenColorTag(String s);
+    protected abstract void processOpenSizeTag(String s);
 
 }
 
@@ -46,12 +59,20 @@ PARSER_END(BBCodeParser)
 
 TOKEN :
 {
-    <END:           "[/" <TAG> "]" >
-|   <LEFT:          "[" > : IN_TAG
-//    <BOLDSTART:     "[b]"     >
-//|   <BOLDEND:       "[/b]"    >
-//|   <ITALICSSTART:  "[i]"     >
-//|   <ITALICSEND:    "[/i]"    >
+    <SIMPLE_TAG_START: ("[" <SIMPLE_TAG> "]") | ((<SPACE> | <EOL>)* "[" <BLOCK_TAG> "]" (<SPACE> | <EOL>)*) > // throw away whitespace around blocks
+|   <SIMPLE_TAG_END:   ("[/" <SIMPLE_TAG> "]") | ((<SPACE> | <EOL>)* "[/" <BLOCK_TAG> "]" (<SPACE> | <EOL>)*) >
+|   <URL_TAG_START: "[url=" <URL_FULL> "]" >
+|   <URL_FTP_TAG_START: "[url=" <URL_FTP> "]" >
+|   <URL_WWW_TAG_START: "[url=" <URL_WWW> "]" >
+|   <URL_EMAIL_TAG_START: "[url=" <EMAIL> "]" >
+|   <URL_TAG_END:   "[/url]" >
+|   <COLOR_TAG_START: "[color=" <COLOR> "]" >
+|   <COLOR_TAG_END: "[/color]" >
+|   <SIZE_TAG_START:    "[size=" (["0"-"9"]){1,3} "]" >
+|   <SIZE_TAG_END:      "[/size]" >
+|   <URL_FULL_TAG:  "[url]" <URL_FULL> "[/url]" >
+|   <BAD_START:     "[" >
+|   <ESCAPED_START: "[[" >
 |   <URL_FULL:      <URL_MAILTO> | (<PROTOCOL> "://" <DOMAIN> (<PORT>)? (<PATH_URL>)?) >
 |   <URL_FTP:       <DOMAIN_FTP> (<PATH_URL>)? >
 |   <URL_WWW:       <DOMAIN_WWW> (<PORT>)? (<PATH_URL>)? >
@@ -73,12 +94,19 @@ TOKEN :
 |   <#TLD:          "com" | "net" | "org" | "gov" | "edu" | "biz" | "info" | "mil" >
 |   <#WWW_PREFIX:   "www" >
 |   <#FTP_PREFIX:   "ftp" >
-|   <#PATH_URL:     ("/" | "?") <PATH> >
+|   <#PATH_URL:     ("/") | (("/" | "?") <PATH>) >
 |   <#PATH:         ([  "!","#","$","%","&","(","*","+", ",","-",".","/","0"-"9",":",";",
-                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])*
+                        "=", "?","@","A"-"Z",/*"[",*/"\\","^", "_","`","a"-"z","{","~" ] | "[[")*
                     ([  "!","#","$","%","&","(","*","+", ",","-",    "/","0"-"9",":",
-                        "=", "?","@","A"-"Z","[","\\","^", "_","`","a"-"z","{","~" ])+ >
-|   <TAG:           "b" | "i" >
+                        "=", "?","@","A"-"Z",/*"[",*/"\\","^", "_","`","a"-"z","{","~" ] | "[[")+ >
+|   <#SIMPLE_TAG:   "b" | "i" | "u" | "s" >
+|   <#BLOCK_TAG:    "quote" | "code" >
+|   <#COLOR:        "black"|"green"|"silver"|"lime"|"gray"|"olive"|"white" |"yellow"|
+                    "maroon"|"navy"|"red"|"blue"|"purple"|"teal"|"fuchsia"|"aqua"|
+                    ("#"(<HEXDIGIT>){3})|
+                    ("#"(<HEXDIGIT>){6}) >
+|   <#HEXDIGIT:     ["A"-"F", "a"-"f", "0"-"9"] >
+
 }
 
 <WORD_OK>
@@ -90,102 +118,199 @@ TOKEN :
     //<WORD:          (~[" ", "\t", "\n", "\r", "\f"])+ > : DEFAULT
     <WORD:          <CHARS> | <PUNCTUATION> > : DEFAULT
 |   <#CHARS:        (["a"-"z"])+ >
-|   <#PUNCTUATION:  (~["a"-"z", " ", "\t", "\n", "\r", "\f"])+ >
+|   <#PUNCTUATION:  (~["a"-"z", "[", " ", "\t", "\n", "\r", "\f"])+ >
 }
 
-<IN_TAG>
-TOKEN :
-{
-    <VALUE:         ( ["a"-"z"] )+ >
-|   <EQUALS:        "=" >
-|   <RIGHT:         "]" > : DEFAULT
-|   <BADTAGTOK:     "" > : DEFAULT
-}
-
-void Input():
-{ }
-{
-    (start()|start2()|misc()|end()|simpleContent())* <EOF>
-}
-
-/*
-void content() :
-{ }
-{
-    (start()|end()|simpleContent())* <EOF>
-}
-*/
-
-void start() :
-{
-    Token t = null;
-}
-{
-    <LEFT> t=<VALUE> <RIGHT>
-    {
-        processWord("<" + t.image + ">");
-    }
-}
-
-void start2() :
-{
-    Token tag = null;
-    Token value = null;
-}
-{
-    <LEFT> tag=<VALUE> <EQUALS> value=<VALUE> <RIGHT>
-    {
-        processWord("<" + tag.image + "=" + value.image + ">");
-    }
-}
-
-void misc() :
-{
-    Token t = null;
-}
-{
-    t = <LEFT> | t = <BADTAGTOK> | t = <VALUE>
-    {
-        processWord(t.image);
-    }
-}
-
-void end() :
-{
-    Token t = null;
-}
-{
-    t = <END>
-    {
-        processWord("</" + t.image + ">");
-    }
-}
-
-/*
-void bold() :
-{}
+void Input(): { }
 {
     (
-        { startBold();  }
-        <BOLDSTART>(content())*<BOLDEND>
-        { endBold();  }
-    ) //|
-    //(
-        //<BOLDSTART>
-    //) |
-    //(
-        //<BOLDEND>
-    //)
+        badOpen()
+        | simpleTagOpen() | simpleTagClose()
+        | sizeTagOpen() | sizeTagClose()
+        | colorTagOpen() | colorTagClose()
+        | urlTagOpen() | urlTagClose()
+        | urlEmailTagOpen() | urlWwwTagOpen() | urlFtpTagOpen()
+        | urlFullTag()
+        | simpleContent()
+    )* <EOF>
+    {
+        tagCloseHelper.endDocument();
+    }
 }
 
-void italics() :
-{}
+/*
+void newLine2() :
 {
-    { startItalics();  }
-    <ITALICSSTART>(content())*<ITALICSEND>
-    { endItalics();  }
+}
+{
+    <NEW_LINE2>
 }
 */
+
+void badOpen() :
+{
+    Token t = null;
+}
+{
+    t=<BAD_START>
+    {
+        processInvalidOpen(t.image);
+    }
+}
+
+void simpleTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<SIMPLE_TAG_START>
+    {
+        String image = t.image.trim();
+        String tag = image.substring(1,image.length()-1);
+        tagCloseHelper.openTag(tag);
+        processOpenSimpleTag(tag);
+    }
+}
+
+void simpleTagClose() :
+{
+    Token t = null;
+}
+{
+    t=<SIMPLE_TAG_END>
+    {
+        String image = t.image.trim();
+        String tag = image.substring(2,image.length()-1);
+        tagCloseHelper.closeTag(tag);
+    }
+}
+
+void urlFullTag() : //[url]http://example.com[/url]
+{
+    Token t = null;
+}
+{
+    t=<URL_FULL_TAG>
+    {
+        String image = t.image;
+        String val = image.substring(5,image.length()-6).replace("[[", "[");
+        processUrl(val);
+    }
+}
+
+void urlTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<URL_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(5,image.length()-1).replace("[[", "[");
+        tagCloseHelper.openTag(TAG_URL);
+        processOpenUrlTag(val);
+    }
+}
+
+void urlFtpTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<URL_FTP_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(5,image.length()-1).replace("[[", "[");
+        tagCloseHelper.openTag(TAG_URL);
+        processOpenUrlFtpTag(val);
+    }
+}
+
+void urlEmailTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<URL_EMAIL_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(5,image.length()-1).replace("[[", "[");
+        tagCloseHelper.openTag(TAG_URL);
+        processOpenUrlEmailTag(val);
+    }
+}
+
+void urlWwwTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<URL_WWW_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(5,image.length()-1).replace("[[", "[");
+        tagCloseHelper.openTag(TAG_URL);
+        processOpenUrlWwwTag(val);
+    }
+}
+
+void urlTagClose() :
+{
+}
+{
+    <URL_TAG_END>
+    {
+        tagCloseHelper.closeTag(TAG_URL);
+    }
+}
+
+void colorTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<COLOR_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(7,image.length()-1);
+        tagCloseHelper.openTag(TAG_COLOR);
+        processOpenColorTag(val);
+    }
+}
+
+void colorTagClose() :
+{
+}
+{
+    <COLOR_TAG_END>
+    {
+        tagCloseHelper.closeTag(TAG_COLOR);
+    }
+}
+
+void sizeTagOpen() :
+{
+    Token t = null;
+}
+{
+    t=<SIZE_TAG_START>
+    {
+        String image = t.image;
+        String val = image.substring(6,image.length()-1);
+        tagCloseHelper.openTag(TAG_SIZE);
+        processOpenSizeTag(val);
+    }
+}
+
+void sizeTagClose() :
+{
+}
+{
+    <SIZE_TAG_END>
+    {
+        tagCloseHelper.closeTag(TAG_SIZE);
+    }
+}
 
 void simpleContent():
 {
@@ -202,15 +327,17 @@ void simpleContent():
             | t = <EOL>
             | t = <NONE>        // enable word matching
             | t = <WORD>
+            | t = <ESCAPED_START>
         )
         {
             if (t.kind == EMAIL     ) processEmail(t.image);
-            if (t.kind == URL_FULL  ) processUrl(t.image);
-            if (t.kind == URL_WWW   ) processWww(t.image);
-            if (t.kind == URL_FTP   ) processFtp(t.image);
+            if (t.kind == URL_FULL  ) processUrl(t.image.replace("[[", "["));
+            if (t.kind == URL_WWW   ) processWww(t.image.replace("[[", "["));
+            if (t.kind == URL_FTP   ) processFtp(t.image.replace("[[", "["));
             if (t.kind == WORD      ) processWord(t.image);
             if (t.kind == SPACE     ) processSpace(t.image);
             if (t.kind == EOL       ) processEol(t.image);
+            if (t.kind == ESCAPED_START  ) processWord("[");
         }
     )
 }
