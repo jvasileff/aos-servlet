@@ -1,5 +1,6 @@
 <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Test Email Form</title>
         <script type="text/javascript" language="JavaScript">
             document.cookie="testCookie=testValue";
@@ -29,6 +30,17 @@
                     <td> Subject </td>
                     <td> <input name="subject" /> </td>
                 </tr>
+                <tr>
+                    <td> Test i18n </td>
+                    <td>
+                        <select name="1" style="width:300; 1px solid black;">
+                            <option value="">Select One</option>
+                            <option value="iacute:&iacute;">iacute:&iacute;</option>
+                            <option value="iacute:&iacute;  ecirc:&ecirc;">iacute:&iacute;  ecirc:&ecirc;</option>
+                        </select>
+                    </td>
+                </tr>
+
                 <tr>
                     <td></td>
                     <td> <input type="submit" /> </td>
