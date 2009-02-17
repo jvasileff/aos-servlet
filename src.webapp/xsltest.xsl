@@ -25,6 +25,7 @@
     <xsl:include href="xsltest-include.xsl"/>
 
     <xsl:template match="/">
+        <xsl:variable name="test-refererence-self" select="document('')/xsl:stylesheet"/>
         <xsl:copy-of select="."/>
     </xsl:template>
 
