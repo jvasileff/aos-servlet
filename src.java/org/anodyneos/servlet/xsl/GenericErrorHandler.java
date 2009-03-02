@@ -30,6 +30,7 @@ public class GenericErrorHandler implements ErrorHandler, ErrorListener {
         log.error(
             "[SAX Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
+        throw exception;
     }
 
     public void fatalError(SAXParseException exception) throws SAXException {
@@ -49,6 +50,7 @@ public class GenericErrorHandler implements ErrorHandler, ErrorListener {
         log.error(
             "[Transformer Error] " +
             getLocationString(exception) + ": " + exception.getMessage());
+        throw exception;
     }
 
     public void fatalError(TransformerException exception) throws TransformerException {
