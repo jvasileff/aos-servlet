@@ -28,6 +28,10 @@ public class ServletContextURIHandler extends AbstractURIHandler implements URIH
     private static final Log log = LogFactory.getLog(ServletContextURIHandler.class);
     private ServletContext servletContext;
 
+    public ServletContextURIHandler() {
+        // expect call to setServletContext()
+    }
+
     public ServletContextURIHandler(ServletContext servletContext) {
         this.servletContext = servletContext;
     }
@@ -39,17 +43,24 @@ public class ServletContextURIHandler extends AbstractURIHandler implements URIH
      */
     public URL toURL(URI uri) {
         assert(! uri.isOpaque());
-        String path = uri.getPath();
-        if (null != path) {
-            try {
-                return servletContext.getResource(path);
-            } catch (MalformedURLException e) {
-                log.warn("Returning null; URI is invalid: " + uri.toString(), e);
+        if (null == servletContext) {
+            return null;
+        } else {
+            String path = uri.getPath();
+            if (null != path) {
+                try {
+                    return servletContext.getResource(path);
+                } catch (MalformedURLException e) {
+                    log.warn("Returning null; URI is invalid: " + uri.toString(), e);
+                    return null;
+                }
+            } else {
                 return null;
             }
-        } else {
-            return null;
         }
     }
+
+    public ServletContext getServletContext() { return servletContext; }
+    public void setServletContext(ServletContext servletContext) { this.servletContext = servletContext; }
 
 }
