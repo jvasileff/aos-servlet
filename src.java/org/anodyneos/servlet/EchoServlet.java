@@ -76,10 +76,11 @@ public class EchoServlet extends HttpServlet {
         out.println("<p>Note: For method='get', on tomcat, the connector defined in the server.xml file must have the 'URIEncoding' attribute set correctly.</p>");
 
         // Info
-        out.println("<h1>Info–</h1>");
+        out.println("<h1>Info</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
         outputRows(out, "HttpServletRequest.getCharacterSet", new String[] { req.getCharacterEncoding() });
+        outputRows(out, "HttpServletRequest.getQueryString", new String[] { req.getQueryString() });
         out.println("</table>");
 
         // Request Parameters
