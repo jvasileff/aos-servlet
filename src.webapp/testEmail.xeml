@@ -22,8 +22,13 @@
                 <part mimeType="text/plain">
                     <content>{reqParam::fromName}: This is an HTML email message.  Please configure your email software to view HTML email.</content>
                 </part>
+                <!--
                 <part mimeType="text/html">
                     <xslResultContent path="/WEB-INF/resources/testEmail/message.xsl"/>
+                </part>
+                -->
+                <part mimeType="text/plain">
+                    <substResultContent charset="UTF-8" path="/WEB-INF/resources/testEmail/attachment3.txt"/>
                 </part>
             </multipart>
             <part mimeType="text/html" fileName="attachment1.html">
