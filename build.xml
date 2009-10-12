@@ -6,12 +6,22 @@
 **
 *****************************************************************************-->
 
-<project name="anodyneos-servlet" default="compile" basedir=".">
+<project name="anodyneos-servlet" default="compile" basedir="."
+        xmlns:artifact="antlib:org.apache.maven.artifact.ant"
+        xmlns:tc="antlib:org.apache.catalina.ant">
 
+    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~  setup and defaults
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
     <property file="build.properties"/>
 
     <property name="compile.source" value="1.4"/>
     <property name="compile.target" value="1.4"/>
+
+    <!-- defaults, override in build.properties if desired -->
+    <property name="compile.deprecation" value="off"/>
+    <property name="compile.debug" value="true"/>
+    <property name="compile.debuglevel" value="lines,source,vars"/>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  common
@@ -19,88 +29,25 @@
     <import file="build.webCommon.xml"/>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ~~  required jars
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-    <property name="anodyneos-commons.jar" location="${dir.jars}/anodyneos-commons-0.4.4/anodyneos-commons.jar"/>
-
-    <property name="javacc.jar" location="${dir.jars}/javacc-3.2/javacc.jar"/>
-    <property name="junit-4.4.jar" location="${dir.jars}/junit-4.4/junit-4.4.jar"/>
-
-    <property name="servlet-api.jar" location="${dir.jars}/servlet-api-2.4/servlet-api.jar"/>
-
-    <property name="jakarta-regexp-1.3.jar" location="${dir.jars}/jakarta-regexp-1.3/jakarta-regexp-1.3.jar"/>
-    <property name="resolver.jar" location="${dir.jars}/xml-commons-resolver-1.2/resolver.jar"/>
-
-    <property name="bsf.jar" location="${dir.jars}/bsf-2.4.0/bsf.jar"/>
-    <property name="js.jar" location="${dir.jars}/rhino-1.7R1/js.jar"/>
-
-    <property name="xml-apis.jar" location="${dir.jars}/xalan-2.7.1/xml-apis.jar"/>
-    <property name="xalan.jar" location="${dir.jars}/xalan-2.7.1/xalan.jar"/>
-    <property name="xercesImpl.jar" location="${dir.jars}/xalan-2.7.1/xercesImpl.jar"/>
-    <property name="serializer.jar" location="${dir.jars}/xalan-2.7.1/serializer.jar"/>
-    <property name="xsltc.jar" location="${dir.jars}/xalan-2.7.1/xsltc.jar"/>
-
-    <property name="commons-io-1.4.jar" location="${dir.jars}/commons-io-1.4/commons-io-1.4.jar"/>
-    <property name="commons-fileupload-1.2.1.jar" location="${dir.jars}/commons-fileupload-1.2.1/commons-fileupload-1.2.1.jar"/>
-
-    <property name="commons-logging-1.1.1.jar" location="${dir.jars}/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
-
-    <!-- non-free -->
-    <property name="activation.jar" location="${dir.jars.notfree}/jaf-1.0.2/activation.jar"/>
-    <property name="imap.jar" location="${dir.jars.notfree}/javamail-1.3.1/imap.jar"/>
-    <property name="mail.jar" location="${dir.jars.notfree}/javamail-1.3.1/mail.jar"/>
-    <property name="mailapi.jar" location="${dir.jars.notfree}/javamail-1.3.1/mailapi.jar"/>
-    <property name="pop3.jar" location="${dir.jars.notfree}/javamail-1.3.1/pop3.jar"/>
-    <property name="smtp.jar" location="${dir.jars.notfree}/javamail-1.3.1/smtp.jar"/>
-
-    <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ~~  prepare.post
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
     <target name="prepare.post">
-        <!-- ide.lib -->
-        <copy toDir="${dir.build.ide.lib}" file="${javacc.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${junit-4.4.jar}"/>
 
-        <copy toDir="${dir.build.ide.lib}" file="${anodyneos-commons.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${servlet-api.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${jakarta-regexp-1.3.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${resolver.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${bsf.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${js.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${xml-apis.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${xalan.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${xercesImpl.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${serializer.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${xsltc.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${commons-io-1.4.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${commons-fileupload-1.2.1.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${activation.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${imap.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${mail.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${mailapi.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${pop3.jar}"/>
-        <copy toDir="${dir.build.ide.lib}" file="${smtp.jar}"/>
-
-        <copy toDir="${dir.build.ide.lib}" file="${commons-logging-1.1.1.jar}"/>
+        <artifact:pom id="pom.main" file="pom.xml"/>
+        <artifact:dependencies usescope="compile" filesetId="fs.dependencies.compile" pomrefid="pom.main"/>
+        <artifact:dependencies usescope="test" filesetId="fs.dependencies.test" pomrefid="pom.main"/>
+        <artifact:dependencies usescope="runtime" filesetId="fs.dependencies.runtime" pomrefid="pom.main"/>
 
         <!-- paths -->
-        <path id="path.compile">
-            <fileset id="fs.lib" dir="${dir.build.ide.lib}">
-                <include name="*.jar"/>
-            </fileset>
+        <path id="path.dependencies.compile">
+            <fileset dir="${dir.build.ide.lib}" includes="*.jar"/>
+            <fileset refid="fs.dependencies.compile"/>
+        </path>
+        <path id="path.dependencies.runtime">
+            <fileset dir="${dir.build.ide.lib}" includes="*.jar"/>
+            <fileset refid="fs.dependencies.runtime"/>
         </path>
 
-        <fileset id="fs.jars" dir="${dir.build.ide.lib}">
-            <include name="*.jar"/>
-            <exclude name="servlet-api.jar"/>
-            <exclude name="commons-logging-1.1.1.jar"/>
-        </fileset>
     </target>
 
     <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +78,7 @@
         <java   classname="org.javacc.parser.Main"
                 fork="yes"
                 failonerror="true" >
-            <classpath refid="path.compile"/>
+            <classpath refid="path.dependencies.compile"/>
             <arg line="-OUTPUT_DIRECTORY=${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
             <arg line="-STATIC=false"/>
             <arg line="${dir.src.java}/org/anodyneos/servlet/xsl/xalan/AutoHtmlParser.jj"/>
@@ -160,7 +107,7 @@
         <java   classname="org.javacc.parser.Main"
                 fork="yes"
                 failonerror="true" >
-            <classpath refid="path.compile"/>
+            <classpath refid="path.dependencies.compile"/>
             <arg line="-OUTPUT_DIRECTORY=${dir.build.java}/org/anodyneos/servlet/xsl/xalan"/>
             <arg line="-STATIC=false"/>
             <arg line="${dir.src.java}/org/anodyneos/servlet/xsl/xalan/BBCodeParser.jj"/>
