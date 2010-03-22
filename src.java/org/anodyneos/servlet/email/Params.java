@@ -12,7 +12,7 @@ package org.anodyneos.servlet.email;
                     context parameters  ServletContext.getInitParameter()   context-param:KEY
 */
 
-
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -33,11 +33,16 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.anodyneos.servlet.multipart.MultipartFile;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 import org.anodyneos.servlet.util.HttpServletRequestAsMap;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class Params {
+
+    private static final Log log = LogFactory.getLog(Params.class);
 
     private HttpServlet servlet;
     private HttpServletRequest req;
@@ -67,6 +72,8 @@ public class Params {
     public static final String FILE_CONTENT_TYPE = "contentType";
     public static final String FILE_SIZE = "size";
     public static final String FILE_ORIGINAL_FILENAME = "originalFilename";
+    // Return a base64 encoded string representation of the file
+    public static final String FILE_BASE64 = "base64";
 
     public static final char SEP_CHAR = ':';
     private static final String SEP_DOUBLE = "::";
@@ -139,6 +146,13 @@ public class Params {
                     return toStringValue(mf.getOriginalFilename());
                 } else if (FILE_SIZE.equals(fileParamAttr)) {
                     return Long.toString(mf.getSize());
+                } else if (FILE_BASE64.equals(fileParamAttr)) {
+                    try {
+                        return new String(Base64.encodeBase64Chunked(mf.getBytes()));
+                    } catch (IOException e) {
+                        log.error("Unable to encode file <'" + fileParamName + "'> to base64: " + e.getMessage(), e);
+                        return "";
+                    }
                 }
             }
         } else if (REQUEST_PARAM.equals(type)) {
