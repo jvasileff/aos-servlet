@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +30,7 @@ public class EchoServlet extends HttpServlet {
     static String CONTINUE_URL = "continueURL";
     static String INFO = "helpText";
 
+    @SuppressWarnings("unchecked")
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
         req.setCharacterEncoding("UTF-8");
         res.setCharacterEncoding("UTF-8");
@@ -191,14 +191,6 @@ public class EchoServlet extends HttpServlet {
             return new String[] {};
         } else {
             return new String[] {s};
-        }
-    }
-
-    protected String[] toStringArray(Set s) {
-        if (null == s) {
-            return new String[] {};
-        } else {
-            return (String[]) s.toArray(new String[s.size()]);
         }
     }
 

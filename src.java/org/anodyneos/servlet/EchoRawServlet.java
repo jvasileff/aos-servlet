@@ -18,13 +18,14 @@ public class EchoRawServlet extends HttpServlet {
 
     private static final long serialVersionUID = 3257563988643756338L;
 
+    @SuppressWarnings("unchecked")
     public void service(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
         // print the header and debug info to system out
         java.util.Enumeration<String> en = req.getHeaderNames();
         System.out.println("---------- Begin ----------");
         System.out.println("req.getCharacterEncoding(): " + req.getCharacterEncoding());
         System.out.println("---------- Headers ----------");
-        while (en.hasMoreElements()) {
+        while (null != en && en.hasMoreElements()) {
             String name = en.nextElement();
             System.out.println(name + "=" + req.getHeader(name));
         }

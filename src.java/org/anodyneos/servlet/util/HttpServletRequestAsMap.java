@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author jvas
  */
-public class HttpServletRequestAsMap implements Map {
+public class HttpServletRequestAsMap implements Map<String, Object> {
 
     public static final Set<String> CGI_VARIABLES = new TreeSet<String>();
 
@@ -90,7 +90,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#values()
      */
-    public Collection values() {
+    public Collection<Object> values() {
         throw new UnsupportedOperationException();
     }
 
@@ -99,7 +99,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#putAll(java.util.Map)
      */
-    public void putAll(Map t) {
+    public void putAll(Map<? extends String, ? extends Object> t) {
         throw new UnsupportedOperationException();
     }
 
@@ -108,7 +108,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#entrySet()
      */
-    public Set entrySet() {
+    public Set<java.util.Map.Entry<String, Object>> entrySet() {
         throw new UnsupportedOperationException();
     }
 
@@ -165,7 +165,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#remove(java.lang.Object)
      */
-    public Object remove(Object key) {
+    public String remove(Object key) {
         throw new UnsupportedOperationException();
     }
 
@@ -174,7 +174,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#put(java.lang.Object, java.lang.Object)
      */
-    public Object put(Object key, Object value) {
+    public String put(String key, Object value) {
         throw new UnsupportedOperationException();
     }
 }

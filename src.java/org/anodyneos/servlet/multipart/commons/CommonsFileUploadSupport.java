@@ -215,13 +215,12 @@ public abstract class CommonsFileUploadSupport {
      * @return the Spring MultipartParsingResult
      * @see CommonsMultipartFile#CommonsMultipartFile(org.apache.commons.fileupload.FileItem)
      */
-    protected MultipartParsingResult parseFileItems(List fileItems, String encoding) {
+    protected MultipartParsingResult parseFileItems(List<FileItem> fileItems, String encoding) {
         Map<String, CommonsMultipartFile> multipartFiles = new HashMap<String, CommonsMultipartFile>();
         Map<String, String[]> multipartParameters = new HashMap<String, String[]>();
 
         // Extract multipart files and multipart parameters.
-        for (Iterator it = fileItems.iterator(); it.hasNext();) {
-            FileItem fileItem = (FileItem) it.next();
+        for (FileItem fileItem : fileItems) {
             if (fileItem.isFormField()) {
                 String value = null;
                 if (encoding != null) {

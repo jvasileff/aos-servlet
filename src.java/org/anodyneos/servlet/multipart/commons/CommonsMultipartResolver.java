@@ -26,6 +26,7 @@ import org.anodyneos.servlet.multipart.MaxUploadSizeExceededException;
 import org.anodyneos.servlet.multipart.MultipartException;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 import org.anodyneos.servlet.multipart.support.DefaultMultipartHttpServletRequest;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.FileUploadBase;
@@ -108,11 +109,12 @@ public class CommonsMultipartResolver extends CommonsFileUploadSupport {
         return ServletFileUpload.isMultipartContent(new ServletRequestContext(request));
     }
 
+    @SuppressWarnings("unchecked")
     public MultipartHttpServletRequest resolveMultipart(HttpServletRequest request) throws MultipartException {
         String encoding = determineEncoding(request);
         FileUpload fileUpload = prepareFileUpload(encoding);
         try {
-            List fileItems = ((ServletFileUpload) fileUpload).parseRequest(request);
+            List<FileItem> fileItems = ((ServletFileUpload) fileUpload).parseRequest(request);
             MultipartParsingResult parsingResult = parseFileItems(fileItems, encoding);
             return new DefaultMultipartHttpServletRequest(
                     request, parsingResult.getMultipartFiles(), parsingResult.getMultipartParameters());

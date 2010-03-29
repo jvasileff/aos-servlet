@@ -47,7 +47,7 @@ public class Params {
     private HttpServlet servlet;
     private HttpServletRequest req;
     private javax.xml.parsers.DocumentBuilder docBuilder;
-    private Map reqAsMap;
+    private Map<String, Object> reqAsMap;
     private MultipartHttpServletRequest multipartReq;
 
     public static final char CSV_LS = '\n';
@@ -57,7 +57,7 @@ public class Params {
      *  a string for the type, the value is a java.util.Map holding all
      *  name/value pairs for the type where value is a String[].
      */
-    private TreeMap<String, Map> types = new TreeMap<String, Map>();
+    private TreeMap<String, Map<String, List<String>>> types = new TreeMap<String, Map<String, List<String>>>();
 
     public static final String REQUEST_FILE = "reqFile";
     public static final String REQUEST_PARAM = "reqParam";
@@ -170,9 +170,9 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringValue(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
-            ArrayList al = (ArrayList) types.get(type).get(name);
+            List<String> al = types.get(type).get(name);
             if (null != al) {
-                return (String) al.get(0);
+                return al.get(0);
             }
         }
         return "";
@@ -182,6 +182,7 @@ public class Params {
      *  @return A String[] containing all values for the given parameter or
      *  an empty array if the parameter does not exist.
      */
+    @SuppressWarnings("unchecked")
     public String[] getParameterValues(String type, String name) {
         if (REQUEST_FILE.equals(type)) {
             String val = getParameter(type, name);
@@ -205,9 +206,9 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringArray(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
-            ArrayList al = (ArrayList) types.get(type).get(name);
+            List<String> al = types.get(type).get(name);
             if (null != al) {
-                return (String[]) al.toArray(new String[al.size()]);
+                return al.toArray(new String[al.size()]);
             }
         }
         return new String[] {};
@@ -217,12 +218,13 @@ public class Params {
      *  @return A String[] containing all parameter names for the given type or
      *  <code>null</code> if the type does not exist.
      */
+    @SuppressWarnings("unchecked")
     public String[] getParameterNames(String type) {
         if (REQUEST_FILE.equals(type)) {
             if (null == multipartReq) {
                 return new String[] {};
             } else {
-                ArrayList list = new ArrayList();
+                List<String> list = new ArrayList<String>();
                 for (Iterator<String> it = multipartReq.getFileNames(); it.hasNext();) {
                     String name = it.next();
                     list.add(name + "." + FILE_CONTENT_TYPE);
@@ -246,7 +248,7 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringArray(reqAsMap.keySet());
         } else if (types.containsKey(type)) {
-            Set keySet = types.get(type).keySet();
+            Set<String> keySet = types.get(type).keySet();
             return (String[]) keySet.toArray(new String[keySet.size()]);
         }
         return new String[] {};
@@ -268,12 +270,11 @@ public class Params {
         return keys.toArray(new String[keys.size()]);
     }
 
-    // note - this assumes list of Strings
-    protected String[] toStringArray(List list) {
+    protected String[] toStringArray(List<String> list) {
         if (list.size() == 0) {
             return new String[] {};
         } else {
-            return (String[]) list.toArray(new String[list.size()]);
+            return list.toArray(new String[list.size()]);
         }
     }
 
@@ -297,11 +298,11 @@ public class Params {
         }
     }
 
-    protected String[] toStringArray(Set s) {
+    protected String[] toStringArray(Set<String> s) {
         if (null == s) {
             return new String[] {};
         } else {
-            return (String[]) s.toArray(new String[s.size()]);
+            return s.toArray(new String[s.size()]);
         }
     }
 
@@ -330,18 +331,18 @@ public class Params {
     }
 
     protected void initType(String type) {
-        Map typeMap = new TreeMap();
+        Map<String, List<String>> typeMap = new TreeMap<String, List<String>>();
         types.put(type, typeMap);
     }
 
     protected void addParameter(String type, String name, Object value) {
         // type: keys=paramNames, values=ArrayList of strings
-        Map<String, ArrayList<String>> typeMap = (TreeMap<String, ArrayList<String>>) types.get(type);
+        Map<String, List<String>> typeMap = (TreeMap<String, List<String>>) types.get(type);
         if (null == typeMap) {
-            typeMap = new TreeMap<String, ArrayList<String>>();
+            typeMap = new TreeMap<String, List<String>>();
             types.put(type, typeMap);
         }
-        ArrayList<String> values = typeMap.get(name);
+        List<String> values = typeMap.get(name);
         if (null == values) {
             values = new ArrayList<String>();
             typeMap.put(name, values);

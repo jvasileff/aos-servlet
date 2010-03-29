@@ -56,11 +56,11 @@ public class Util {
         return null;
     }
 
-    public static Object instantiateObject(Class refClass, String clazzName) {
+    public static Object instantiateObject(Class<?> refClass, String clazzName) {
         ClassLoader cl1 = Thread.currentThread().getContextClassLoader();
         ClassLoader cl2 = refClass.getClassLoader();
 
-        Class clazz = null;
+        Class<?> clazz = null;
         if (null != cl1) {
             clazz = loadClass(cl1, clazzName);
         }
@@ -81,9 +81,9 @@ public class Util {
         }
     }
 
-    private static Class loadClass(ClassLoader cl, String name) {
+    private static Class<?> loadClass(ClassLoader cl, String name) {
         try {
-            Class clazz = cl.loadClass(name);
+            Class<?> clazz = cl.loadClass(name);
                 return clazz;
             } catch (ClassNotFoundException e) {
                 return null;

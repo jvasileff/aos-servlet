@@ -49,7 +49,7 @@ public class EmailCmd implements Command {
         List<Address> to = new ArrayList<Address>();
         List<Address> cc = new ArrayList<Address>();
         List<Address> bcc = new ArrayList<Address>();
-        List header = new ArrayList();
+        List<String[]> header = new ArrayList<String[]>();
         List<Address> from = new ArrayList<Address>();
 
         // create some properties and get the default Session
@@ -88,8 +88,8 @@ public class EmailCmd implements Command {
 
         }
         if (header.size() > 0) {
-            for (Iterator it = header.iterator(); it.hasNext();) {
-                String[] sa = (String[]) it.next();
+            for (Iterator<String []> it = header.iterator(); it.hasNext();) {
+                String[] sa = it.next();
                 message.addHeader(sa[0], sa[1]);
             }
         }
