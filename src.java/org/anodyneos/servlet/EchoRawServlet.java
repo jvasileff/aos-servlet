@@ -20,12 +20,12 @@ public class EchoRawServlet extends HttpServlet {
 
     public void service(HttpServletRequest req, HttpServletResponse res) throws java.io.IOException {
         // print the header and debug info to system out
-        java.util.Enumeration en = req.getHeaderNames();
+        java.util.Enumeration<String> en = req.getHeaderNames();
         System.out.println("---------- Begin ----------");
         System.out.println("req.getCharacterEncoding(): " + req.getCharacterEncoding());
         System.out.println("---------- Headers ----------");
         while (en.hasMoreElements()) {
-            String name = (String) en.nextElement();
+            String name = en.nextElement();
             System.out.println(name + "=" + req.getHeader(name));
         }
         // simply output the input.

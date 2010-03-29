@@ -21,6 +21,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.anodyneos.servlet.multipart.commons.CommonsMultipartFile;
+
 /**
  * Provides additional methods for dealing with multipart content within a
  * servlet request, allowing to access uploaded files.
@@ -54,7 +56,7 @@ public interface MultipartHttpServletRequest extends HttpServletRequest {
      * original file names.
      * @return the names of the files
      */
-    Iterator getFileNames();
+    Iterator<String> getFileNames();
 
     /**
      * Return the contents plus description of an uploaded file in this request,
@@ -70,6 +72,6 @@ public interface MultipartHttpServletRequest extends HttpServletRequest {
      * {@link org.springframework.web.multipart.MultipartFile} objects as values
      * @see MultipartFile
      */
-    Map getFileMap();
+    Map<String, CommonsMultipartFile> getFileMap();
 
 }

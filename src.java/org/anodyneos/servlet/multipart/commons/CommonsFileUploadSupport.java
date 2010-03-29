@@ -216,8 +216,8 @@ public abstract class CommonsFileUploadSupport {
      * @see CommonsMultipartFile#CommonsMultipartFile(org.apache.commons.fileupload.FileItem)
      */
     protected MultipartParsingResult parseFileItems(List fileItems, String encoding) {
-        Map multipartFiles = new HashMap();
-        Map multipartParameters = new HashMap();
+        Map<String, CommonsMultipartFile> multipartFiles = new HashMap<String, CommonsMultipartFile>();
+        Map<String, String[]> multipartParameters = new HashMap<String, String[]>();
 
         // Extract multipart files and multipart parameters.
         for (Iterator it = fileItems.iterator(); it.hasNext();) {
@@ -239,7 +239,7 @@ public abstract class CommonsFileUploadSupport {
                 else {
                     value = fileItem.getString();
                 }
-                String[] curParam = (String[]) multipartParameters.get(fileItem.getFieldName());
+                String[] curParam = multipartParameters.get(fileItem.getFieldName());
                 if (curParam == null) {
                     // simple form field
                     multipartParameters.put(fileItem.getFieldName(), new String[] { value });
@@ -271,9 +271,9 @@ public abstract class CommonsFileUploadSupport {
      * @param multipartFiles Collection of MultipartFile instances
      * @see org.apache.commons.fileupload.FileItem#delete()
      */
-    protected void cleanupFileItems(Collection multipartFiles) {
-        for (Iterator it = multipartFiles.iterator(); it.hasNext();) {
-            CommonsMultipartFile file = (CommonsMultipartFile) it.next();
+    protected void cleanupFileItems(Collection<CommonsMultipartFile> multipartFiles) {
+        for (Iterator<CommonsMultipartFile> it = multipartFiles.iterator(); it.hasNext();) {
+            CommonsMultipartFile file = it.next();
             if (logger.isDebugEnabled()) {
                 logger.debug("Cleaning up multipart file [" + file.getName() + "] with original filename [" +
                         file.getOriginalFilename() + "], stored " + file.getStorageDescription());
@@ -289,16 +289,16 @@ public abstract class CommonsFileUploadSupport {
      */
     protected static class MultipartParsingResult {
 
-        private final Map multipartFiles;
+        private final Map<String, CommonsMultipartFile> multipartFiles;
 
-        private final Map multipartParameters;
+        private final Map<String, String[]> multipartParameters;
 
         /**
          * Create a new MultipartParsingResult.
          * @param multipartFiles Map of field name to MultipartFile instance
          * @param multipartParameters Map of field name to form field String value
          */
-        public MultipartParsingResult(Map multipartFiles, Map multipartParameters) {
+        public MultipartParsingResult(Map<String, CommonsMultipartFile> multipartFiles, Map<String, String[]> multipartParameters) {
             this.multipartFiles = multipartFiles;
             this.multipartParameters = multipartParameters;
         }
@@ -306,14 +306,14 @@ public abstract class CommonsFileUploadSupport {
         /**
          * Return the multipart files as Map of field name to MultipartFile instance.
          */
-        public Map getMultipartFiles() {
+        public Map<String, CommonsMultipartFile> getMultipartFiles() {
             return multipartFiles;
         }
 
         /**
          * Return the multipart parameters as Map of field name to form field String value.
          */
-        public Map getMultipartParameters() {
+        public Map<String, String[]> getMultipartParameters() {
             return multipartParameters;
         }
     }

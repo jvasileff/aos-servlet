@@ -25,6 +25,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.anodyneos.servlet.multipart.commons.CommonsMultipartFile;
+
 /**
  * Default implementation of the MultipartHttpServletRequest interface.
  * Provides management of pre-generated parameter values.
@@ -36,7 +38,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DefaultMultipartHttpServletRequest extends AbstractMultipartHttpServletRequest {
 
-    private final Map multipartParameters;
+    private final Map<String, String[]> multipartParameters;
 
 
     /**
@@ -47,7 +49,7 @@ public class DefaultMultipartHttpServletRequest extends AbstractMultipartHttpSer
      * with Strings as keys and String arrays as values
      */
     public DefaultMultipartHttpServletRequest(
-            HttpServletRequest request, Map multipartFiles, Map multipartParameters) {
+            HttpServletRequest request, Map<String, CommonsMultipartFile> multipartFiles, Map<String, String[]> multipartParameters) {
 
         super(request);
         setMultipartFiles(multipartFiles);
@@ -55,18 +57,19 @@ public class DefaultMultipartHttpServletRequest extends AbstractMultipartHttpSer
     }
 
 
-    public Enumeration getParameterNames() {
-        Set paramNames = new HashSet();
+    @SuppressWarnings("unchecked")
+    public Enumeration<String> getParameterNames() {
+        Set<String> paramNames = new HashSet<String>();
         Enumeration paramEnum = super.getParameterNames();
         while (paramEnum.hasMoreElements()) {
-            paramNames.add(paramEnum.nextElement());
+            paramNames.add((String) paramEnum.nextElement());
         }
         paramNames.addAll(this.multipartParameters.keySet());
         return Collections.enumeration(paramNames);
     }
 
     public String getParameter(String name) {
-        String[] values = (String[]) this.multipartParameters.get(name);
+        String[] values = this.multipartParameters.get(name);
         if (values != null) {
             return (values.length > 0 ? values[0] : null);
         }
@@ -74,15 +77,16 @@ public class DefaultMultipartHttpServletRequest extends AbstractMultipartHttpSer
     }
 
     public String[] getParameterValues(String name) {
-        String[] values = (String[]) this.multipartParameters.get(name);
+        String[] values = this.multipartParameters.get(name);
         if (values != null) {
             return values;
         }
         return super.getParameterValues(name);
     }
 
-    public Map getParameterMap() {
-        Map paramMap = new HashMap();
+    @SuppressWarnings("unchecked")
+    public Map<String, String[]> getParameterMap() {
+        Map<String, String[]> paramMap = new HashMap<String, String[]>();
         paramMap.putAll(super.getParameterMap());
         paramMap.putAll(this.multipartParameters);
         return paramMap;

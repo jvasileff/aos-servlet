@@ -46,11 +46,11 @@ public class EmailCmd implements Command {
     }
 
     public void process(EmailContext ctx, Element email) throws Exception {
-        List to = new ArrayList();
-        List cc = new ArrayList();
-        List bcc = new ArrayList();
+        List<Address> to = new ArrayList<Address>();
+        List<Address> cc = new ArrayList<Address>();
+        List<Address> bcc = new ArrayList<Address>();
         List header = new ArrayList();
-        List from = new ArrayList();
+        List<Address> from = new ArrayList<Address>();
 
         // create some properties and get the default Session
         Properties props = new java.util.Properties();
@@ -94,16 +94,16 @@ public class EmailCmd implements Command {
             }
         }
         if (to.size() > 0) {
-            message.setRecipients(Message.RecipientType.TO, (InternetAddress[])to.toArray(new InternetAddress[to.size()]));
+            message.setRecipients(Message.RecipientType.TO, to.toArray(new InternetAddress[to.size()]));
         }
         if (cc.size() > 0) {
-            message.setRecipients(Message.RecipientType.CC, (InternetAddress[])cc.toArray(new InternetAddress[cc.size()]));
+            message.setRecipients(Message.RecipientType.CC, cc.toArray(new InternetAddress[cc.size()]));
         }
         if (bcc.size() > 0) {
-            message.setRecipients(Message.RecipientType.BCC, (InternetAddress[])bcc.toArray(new InternetAddress[bcc.size()]));
+            message.setRecipients(Message.RecipientType.BCC, bcc.toArray(new InternetAddress[bcc.size()]));
         }
         if (from.size() > 0) {
-            message.addFrom((InternetAddress[])from.toArray(new InternetAddress[from.size()]));
+            message.addFrom(from.toArray(new InternetAddress[from.size()]));
         }
         message.saveChanges();
         //System.out.println("EMAIL MESSAGE___________________________________");

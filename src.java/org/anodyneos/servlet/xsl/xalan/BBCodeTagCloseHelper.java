@@ -6,8 +6,8 @@ import java.util.List;
 public class BBCodeTagCloseHelper {
 
     private BBCodeParser parser;
-    private List tagStack = new ArrayList();
-    private List alreadyClosedList = new ArrayList();
+    private List<String> tagStack = new ArrayList<String>();
+    private List<String> alreadyClosedList = new ArrayList<String>();
 
     /*
     - Starting a tag is always legal (can all tags be nested?)
@@ -42,7 +42,7 @@ public class BBCodeTagCloseHelper {
             tagStack.remove(tagStack.size()-1);
         } else if (tagStack.lastIndexOf(tag) != -1) {
             for (int currentIndex = tagStack.size() - 1; currentIndex > -1; currentIndex--) {
-                String currentTag = (String) tagStack.get(currentIndex);
+                String currentTag = tagStack.get(currentIndex);
                 parser.processCloseTag(currentTag);
                 tagStack.remove(currentIndex);
                 if (currentTag.equals(tag)) {
@@ -56,7 +56,7 @@ public class BBCodeTagCloseHelper {
 
     public void endDocument() {
         for (int currentIndex = tagStack.size() - 1; currentIndex > -1; currentIndex--) {
-            String currentTag = (String) tagStack.get(currentIndex);
+            String currentTag = tagStack.get(currentIndex);
             parser.processCloseTag(currentTag);
             tagStack.remove(currentIndex);
         }

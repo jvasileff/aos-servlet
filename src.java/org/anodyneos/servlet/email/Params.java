@@ -57,7 +57,7 @@ public class Params {
      *  a string for the type, the value is a java.util.Map holding all
      *  name/value pairs for the type where value is a String[].
      */
-    private TreeMap types = new TreeMap();
+    private TreeMap<String, Map> types = new TreeMap<String, Map>();
 
     public static final String REQUEST_FILE = "reqFile";
     public static final String REQUEST_PARAM = "reqParam";
@@ -170,7 +170,7 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringValue(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
-            ArrayList al = (ArrayList) ((Map)types.get(type)).get(name);
+            ArrayList al = (ArrayList) types.get(type).get(name);
             if (null != al) {
                 return (String) al.get(0);
             }
@@ -205,7 +205,7 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringArray(reqAsMap.get(name));
         } else if (types.containsKey(type)) {
-            ArrayList al = (ArrayList) ((Map)types.get(type)).get(name);
+            ArrayList al = (ArrayList) types.get(type).get(name);
             if (null != al) {
                 return (String[]) al.toArray(new String[al.size()]);
             }
@@ -223,8 +223,8 @@ public class Params {
                 return new String[] {};
             } else {
                 ArrayList list = new ArrayList();
-                for (Iterator it = multipartReq.getFileNames(); it.hasNext();) {
-                    String name = (String) it.next();
+                for (Iterator<String> it = multipartReq.getFileNames(); it.hasNext();) {
+                    String name = it.next();
                     list.add(name + "." + FILE_CONTENT_TYPE);
                     list.add(name + "." + FILE_ORIGINAL_FILENAME);
                     list.add(name + "." + FILE_SIZE);
@@ -246,7 +246,7 @@ public class Params {
         } else if (CGI.equals(type)) {
             return toStringArray(reqAsMap.keySet());
         } else if (types.containsKey(type)) {
-            Set keySet = ((Map)types.get(type)).keySet();
+            Set keySet = types.get(type).keySet();
             return (String[]) keySet.toArray(new String[keySet.size()]);
         }
         return new String[] {};
@@ -264,8 +264,8 @@ public class Params {
      *  @return A String[] containing the name of all types.
      */
     public String[] getTypeNames() {
-        Set keys = types.keySet();
-        return (String[]) keys.toArray(new String[keys.size()]);
+        Set<String> keys = types.keySet();
+        return keys.toArray(new String[keys.size()]);
     }
 
     // note - this assumes list of Strings
@@ -277,15 +277,15 @@ public class Params {
         }
     }
 
-    protected String[] toStringArray(Enumeration e) {
-        List list = new ArrayList();
+    protected String[] toStringArray(Enumeration<String> e) {
+        List<String> list = new ArrayList<String>();
         while (e.hasMoreElements()) {
             list.add(e.nextElement().toString());
         }
         if (0 == list.size()) {
             return new String[] {};
         } else {
-            return (String[]) list.toArray(new String[list.size()]);
+            return list.toArray(new String[list.size()]);
         }
     }
 
@@ -336,14 +336,14 @@ public class Params {
 
     protected void addParameter(String type, String name, Object value) {
         // type: keys=paramNames, values=ArrayList of strings
-        Map typeMap = (TreeMap) types.get(type);
+        Map<String, ArrayList<String>> typeMap = (TreeMap<String, ArrayList<String>>) types.get(type);
         if (null == typeMap) {
-            typeMap = new TreeMap();
+            typeMap = new TreeMap<String, ArrayList<String>>();
             types.put(type, typeMap);
         }
-        ArrayList values = (ArrayList) typeMap.get(name);
+        ArrayList<String> values = typeMap.get(name);
         if (null == values) {
-            values = new ArrayList();
+            values = new ArrayList<String>();
             typeMap.put(name, values);
         }
         values.add(value.toString());
@@ -476,7 +476,7 @@ public class Params {
     protected class Reference {
         String scope;
         String name;
-        Set args = new HashSet();
+        Set<String> args = new HashSet<String>();
 
         protected Reference(String ref) {
             // TODO: handle invalid syntax

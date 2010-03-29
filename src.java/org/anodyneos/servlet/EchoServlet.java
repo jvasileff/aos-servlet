@@ -35,7 +35,7 @@ public class EchoServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         res.setCharacterEncoding("UTF-8");
 
-        Enumeration paramNames = req.getParameterNames();
+        Enumeration<String> paramNames = req.getParameterNames();
         res.setContentType("text/html");
         java.io.PrintWriter out = res.getWriter();
 
@@ -87,8 +87,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Request Parameters</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration names = req.getParameterNames(); names.hasMoreElements();) {
-            String name = (String) names.nextElement();
+        for (Enumeration<String> names = req.getParameterNames(); names.hasMoreElements();) {
+            String name = names.nextElement();
             String[] values = req.getParameterValues(name);
             outputRows(out, name, values);
         }
@@ -98,8 +98,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Request Headers</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration en = req.getHeaderNames(); en.hasMoreElements();) {
-            String name = (String) en.nextElement();
+        for (Enumeration<String> en = req.getHeaderNames(); en.hasMoreElements();) {
+            String name = en.nextElement();
             String[] values = toStringArray(req.getHeaders(name));
             outputRows(out, name, values);
         }
@@ -109,8 +109,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Request Attributes</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration en = req.getAttributeNames(); en.hasMoreElements();) {
-            String name = (String) en.nextElement();
+        for (Enumeration<String> en = req.getAttributeNames(); en.hasMoreElements();) {
+            String name = en.nextElement();
             String[] values = toStringArray(req.getAttribute(name));
             outputRows(out, name, values);
         }
@@ -120,8 +120,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Servlet Parameters</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration en = getInitParameterNames(); en.hasMoreElements();) {
-            String name = (String) en.nextElement();
+        for (Enumeration<String> en = getInitParameterNames(); en.hasMoreElements();) {
+            String name = en.nextElement();
             String[] values = toStringArray(getInitParameter(name));
             outputRows(out, name, values);
         }
@@ -131,8 +131,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Context Attributes</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration en = getServletContext().getAttributeNames(); en.hasMoreElements();) {
-            String name = (String) en.nextElement();
+        for (Enumeration<String> en = getServletContext().getAttributeNames(); en.hasMoreElements();) {
+            String name = en.nextElement();
             String[] values = toStringArray(getServletContext().getAttribute(name));
             outputRows(out, name, values);
         }
@@ -142,8 +142,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<h1>Context Parameters</h1>");
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
-        for (Enumeration en = getServletContext().getInitParameterNames(); en.hasMoreElements();) {
-            String name = (String) en.nextElement();
+        for (Enumeration<String> en = getServletContext().getInitParameterNames(); en.hasMoreElements();) {
+            String name = en.nextElement();
             String[] values = toStringArray(getServletContext().getInitParameter(name));
             outputRows(out, name, values);
         }
@@ -154,8 +154,8 @@ public class EchoServlet extends HttpServlet {
         out.println("<table border='1'>");
         out.println("<tr><td><b>Name</b></td><td><b>Value(s)</b></td></tr>");
         HttpServletRequestAsMap reqAsMap = new HttpServletRequestAsMap(req);
-        for (Iterator it = reqAsMap.keySet().iterator(); it.hasNext();) {
-            String name = (String) it.next();
+        for (Iterator<String> it = reqAsMap.keySet().iterator(); it.hasNext();) {
+            String name = it.next();
             String[] values = toStringArray(reqAsMap.get(name));
             outputRows(out, name, values);
         }
@@ -174,15 +174,15 @@ public class EchoServlet extends HttpServlet {
     }
 
 
-    protected String[] toStringArray(Enumeration e) {
-        List list = new ArrayList();
+    protected String[] toStringArray(Enumeration<String> e) {
+        List<String> list = new ArrayList<String>();
         while (e.hasMoreElements()) {
             list.add(e.nextElement().toString());
         }
         if (0 == list.size()) {
             return new String[] {};
         } else {
-            return (String[]) list.toArray(new String[list.size()]);
+            return list.toArray(new String[list.size()]);
         }
     }
 

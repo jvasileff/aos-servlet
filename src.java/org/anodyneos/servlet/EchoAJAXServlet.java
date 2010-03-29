@@ -28,15 +28,15 @@ public class EchoAJAXServlet extends HttpServlet {
             String qs = req.getQueryString();
             if (null != qs) {
                 System.out.println("Processing query string: " + qs);
-                Hashtable params = parseQueryString(qs);
+                Hashtable<String, String[]> params = parseQueryString(qs);
                 if (params.get("reqEnc") != null) {
-                    reqEnc = ((String[]) params.get("reqEnc"))[0];
+                    reqEnc = params.get("reqEnc")[0];
                 }
                 if (params.get("resEnc") != null) {
-                    resEnc = ((String[]) params.get("resEnc"))[0];
+                    resEnc = params.get("resEnc")[0];
                 }
                 if (params.get("resMime") != null) {
-                    resMime = ((String[]) params.get("resMime"))[0];
+                    resMime = params.get("resMime")[0];
                 }
             }
             req.setCharacterEncoding(reqEnc);
@@ -69,14 +69,14 @@ public class EchoAJAXServlet extends HttpServlet {
     /*
      * code taken from tomcat-5 HttpUtils
      */
-    static public Hashtable parseQueryString(String s) {
+    static public Hashtable<String, String[]> parseQueryString(String s) {
 
         String valArray[] = null;
 
         if (s == null) {
             throw new IllegalArgumentException();
         }
-        Hashtable ht = new Hashtable();
+        Hashtable<String, String[]> ht = new Hashtable<String, String[]>();
         StringBuffer sb = new StringBuffer();
         StringTokenizer st = new StringTokenizer(s, "&");
         while (st.hasMoreTokens()) {
@@ -96,7 +96,7 @@ public class EchoAJAXServlet extends HttpServlet {
             String key = parseName(pair.substring(0, pos), sb);
             String val = parseName(pair.substring(pos+1, pair.length()), sb);
             if (ht.containsKey(key)) {
-                String oldVals[] = (String []) ht.get(key);
+                String oldVals[] = ht.get(key);
                 valArray = new String[oldVals.length + 1];
                 for (int i = 0; i < oldVals.length; i++)
                     valArray[i] = oldVals[i];

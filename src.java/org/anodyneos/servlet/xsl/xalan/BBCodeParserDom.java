@@ -15,7 +15,7 @@ public class BBCodeParserDom extends BBCodeParser {
     private static AutoHtmlParserUrlGen urlGenDefault = new AutoHtmlParserUrlGenDefault();
 
     private StringBuffer sb;
-    private List nodeStack = new ArrayList();
+    private List<Node> nodeStack = new ArrayList<Node>();
     private Node currentNode;
     private Node initialNode;
     private Document doc;
@@ -65,7 +65,7 @@ public class BBCodeParserDom extends BBCodeParser {
     private void popNode() {
         int current = nodeStack.size() - 1;
         nodeStack.remove(current);
-        currentNode = (Node) nodeStack.get(current - 1);
+        currentNode = nodeStack.get(current - 1);
     }
 
     private void addSpace(String s) {

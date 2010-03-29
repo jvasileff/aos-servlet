@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 
 import org.anodyneos.servlet.multipart.MultipartFile;
 import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
+import org.anodyneos.servlet.multipart.commons.CommonsMultipartFile;
 
 /**
  * Abstract base implementation of the MultipartHttpServletRequest interface.
@@ -36,7 +37,7 @@ import org.anodyneos.servlet.multipart.MultipartHttpServletRequest;
 public abstract class AbstractMultipartHttpServletRequest extends HttpServletRequestWrapper
     implements MultipartHttpServletRequest {
 
-    private Map multipartFiles;
+    private Map<String, CommonsMultipartFile> multipartFiles;
 
     /**
      * Wrap the given HttpServletRequest in a MultipartHttpServletRequest.
@@ -50,19 +51,19 @@ public abstract class AbstractMultipartHttpServletRequest extends HttpServletReq
      * Set a Map with parameter names as keys and MultipartFile objects as values.
      * To be invoked by subclasses on initialization.
      */
-    protected void setMultipartFiles(Map multipartFiles) {
+    protected void setMultipartFiles(Map<String, CommonsMultipartFile> multipartFiles) {
         this.multipartFiles = Collections.unmodifiableMap(multipartFiles);
     }
 
-    public Iterator getFileNames() {
+    public Iterator<String> getFileNames() {
         return this.multipartFiles.keySet().iterator();
     }
 
     public MultipartFile getFile(String name) {
-        return (MultipartFile) this.multipartFiles.get(name);
+        return this.multipartFiles.get(name);
     }
 
-    public Map getFileMap() {
+    public Map<String, CommonsMultipartFile> getFileMap() {
         return this.multipartFiles;
     }
 

@@ -11,7 +11,7 @@ import org.w3c.dom.ProcessingInstruction;
  */
 public class PIA {
 
-    private Hashtable piAttributes = null;
+    private Hashtable<String, String> piAttributes = null;
 
     /**
      * Constructor.
@@ -19,7 +19,7 @@ public class PIA {
      */
     public PIA(ProcessingInstruction pi)
     {
-        piAttributes = new Hashtable();
+        piAttributes = new Hashtable<String, String>();
         StringTokenizer tokenizer = new StringTokenizer(pi.getNodeValue(), "=\"");
         while(tokenizer.hasMoreTokens())
             {
@@ -33,6 +33,6 @@ public class PIA {
      */
     public String getAttribute(String name)
     {
-        return (String) piAttributes.get(name);
+        return piAttributes.get(name);
     }
 }

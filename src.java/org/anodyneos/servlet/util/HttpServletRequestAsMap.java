@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class HttpServletRequestAsMap implements Map {
 
-    public static final Set CGI_VARIABLES = new TreeSet();
+    public static final Set<String> CGI_VARIABLES = new TreeSet<String>();
 
     private HttpServletRequest req;
 
@@ -117,7 +117,7 @@ public class HttpServletRequestAsMap implements Map {
      *
      * @see java.util.Map#keySet()
      */
-    public Set keySet() {
+    public Set<String> keySet() {
         return CGI_VARIABLES;
     }
 
